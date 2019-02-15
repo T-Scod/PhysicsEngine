@@ -25,7 +25,7 @@ bool CollisionApp::startup()
 
 	m_physicsScene = new PhysicsScene();
 	m_physicsScene->SetGravity(glm::vec2(0, 0)); // gravity off
-	m_physicsScene->SetTimeStep(0.001f);
+	m_physicsScene->SetTimeStep(0.2f);
 
 	glm::vec2 startPos1 = glm::vec2(-10, 10);
 	glm::vec2 startPos2 = glm::vec2(10, 0);
@@ -39,14 +39,14 @@ bool CollisionApp::startup()
 	glm::vec4 red = glm::vec4(1, 0, 0, 1);
 	glm::vec4 green = glm::vec4(0, 1, 0, 1);
 
-	//AABB* box1 = new AABB(startPos1, velocity, mass, 5, 5, red);
-	//m_physicsScene->AddActor(box1);
+	AABB* box1 = new AABB(startPos1, -0.785398f, 10, mass, 5, 5, red);
+	m_physicsScene->AddActor(box1);
 	//box1->ApplyForce(force1);
 	//AABB* box2 = new AABB(startPos2, velocity, mass1, 5, 5, green);
 	//m_physicsScene->AddActor(box2);
 	//box2->ApplyForce(force2);
-	Sphere* ball1 = new Sphere(startPos1, -0.785398f, 10, mass, 4, red);
-	m_physicsScene->AddActor(ball1);
+	//Sphere* ball1 = new Sphere(startPos1, -0.785398f, 10, mass, 4, red);
+	//m_physicsScene->AddActor(ball1);
 	//ball1->ApplyForce(force1);
 	//Sphere* ball2 = new Sphere(startPos2, velocity, mass2, 5, green);
 	//m_physicsScene->AddActor(ball2);
