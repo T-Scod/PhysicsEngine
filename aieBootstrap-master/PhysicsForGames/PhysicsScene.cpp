@@ -70,14 +70,14 @@ void PhysicsScene::Update(const float dt)
 
 	while (accumulatedTime >= m_timeStep)
 	{
-		// check for collisions
-		CheckForCollision();
-
 		// calls fixed update on all actors
 		for (auto pActor : m_actors)
 		{
 			pActor->FixedUpdate(m_gravity, m_timeStep);
 		}
+
+		// check for collisions
+		CheckForCollision();
 
 		accumulatedTime -= m_timeStep;
 	}
@@ -150,38 +150,23 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 	if (sphere != nullptr && plane != nullptr)
 	{
 		glm::vec2 collisionNormal = plane->GetNormal();
-		float sphereToPlane = glm::dot(sphere->GetPosition(), plane->GetNormal()) - plane->GetDistance();
-
-		// if we are behind then flip the normal
-		if (sphereToPlane < 0)
-		{
-			collisionNormal *= -1.0f;
-			sphereToPlane *= -1.0f;
-		}
+		float sphereToPlane = glm::dot(sphere->GetPosition(), collisionNormal) - plane->GetDistance();
 
 		float intersection = sphere->GetRadius() - sphereToPlane;
 		if (intersection > 0)
 		{
-			// seperate the sphere from the plane
-			float restitution = acosf(glm::dot(-(glm::normalize(sphere->GetVelocity())), collisionNormal)) * intersection;
-
-			glm::vec2 newPos = sphere->GetPosition() - (glm::normalize(sphere->GetVelocity()) * restitution);
-			sphere->SetPosition(newPos);
-
-			float foo = glm::dot(sphere->GetPosition(), plane->GetNormal()) - plane->GetDistance();
-			if (foo < 0)
-			{
-				foo *= -1.0f;
-			}
-			float foo1 = sphere->GetRadius() - foo;
-
-			glm::vec2 normal = plane->GetNormal();
 			glm::vec2 relativeVelocity = sphere->GetVelocity();
 
-			float elasticity = 1;
-			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / (1 / sphere->GetMass());
+			float foo = acosf(glm::dot(-(glm::normalize(relativeVelocity)), collisionNormal));
+			// seperate the sphere from the plane
+			float restitution = tanf(foo) * intersection;
+			glm::vec2 newPos = glm::distance(glm::vec2(restitution, intersection), glm::vec2(0, 0)) * -(glm::normalize(relativeVelocity));
+			sphere->SetPosition(sphere->GetPosition() + newPos);
 
-			glm::vec2 force = normal * j;
+			float elasticity = 1;
+			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), collisionNormal) / (1 / sphere->GetMass());
+
+			glm::vec2 force = collisionNormal * j;
 
 			sphere->ApplyForce(force);
 
@@ -201,12 +186,20 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
 	{
 		// determines the distance between the two spheres
 		float distance = glm::distance(sphere1->GetPosition(), sphere2->GetPosition());
+		float radii = sphere1->GetRadius() + sphere2->GetRadius();
 
 		// checks if the distance is less than the sum of the two radii
-		if (distance < (sphere1->GetRadius() + sphere2->GetRadius()))
+		if (distance < radii)
 		{
 			glm::vec2 normal = glm::normalize(sphere2->GetPosition() - sphere1->GetPosition());
 			glm::vec2 relativeVelocity = sphere2->GetVelocity() - sphere1->GetVelocity();
+
+			float mass = sphere1->GetMass() + sphere2->GetMass();
+			float overlap = radii - distance;
+			float overlap1 = overlap * (sphere1->GetMass() / mass);
+			float overlap2 = overlap * (sphere2->GetMass() / mass);
+			sphere1->SetPosition(sphere1->GetPosition() + (-(glm::normalize(normal)) * overlap1));
+			sphere2->SetPosition(sphere2->GetPosition() + (glm::normalize(normal) * overlap2));
 
 			float elasticity = 1;
 			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / sphere1->GetMass()) + (1 / sphere2->GetMass())));
