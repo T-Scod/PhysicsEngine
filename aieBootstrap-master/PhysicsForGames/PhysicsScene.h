@@ -21,24 +21,31 @@ public:
 	// calls the debug function of each actor
 	void DebugScene();
 
-	// sets and gets the gravity
 	void SetGravity(const glm::vec2& gravity) { m_gravity = gravity; }
 	glm::vec2 GetGravity() const { return m_gravity; }
-	
-	// sets and gets the time step
 	void SetTimeStep(const float timeStep) { m_timeStep = timeStep; }
 	float GetTimeStep() const { return m_timeStep; }
 
+	// checks if any actors are colliding with each other
 	void CheckForCollision();
 
+	// checks for collision between plane and plane
 	static bool Plane2Plane(PhysicsObject* obj1, PhysicsObject* obj2);
+	// does the reverse of a circle to plane collision check
 	static bool Plane2Sphere(PhysicsObject* obj1, PhysicsObject* obj2);
+	// does the reverse of a box to plane collision check
 	static bool Plane2Box(PhysicsObject* obj1, PhysicsObject* obj2);
+	// checks for collision between circle and plane
 	static bool Sphere2Plane(PhysicsObject* obj1, PhysicsObject* obj2);
+	// checks for collision between box and plane
 	static bool Sphere2Sphere(PhysicsObject* obj1, PhysicsObject* obj2);
+	// checks for collision between circle and box
 	static bool Sphere2Box(PhysicsObject* obj1, PhysicsObject* obj2);
+	// checks for collision between box and plane
 	static bool Box2Plane(PhysicsObject* obj1, PhysicsObject* obj2);
+	// does the reverse of a cirlce to box collision check
 	static bool Box2Sphere(PhysicsObject* obj1, PhysicsObject* obj2);
+	// cheks for collision between box and box
 	static bool Box2Box(PhysicsObject* obj1, PhysicsObject* obj2);
 
 protected:

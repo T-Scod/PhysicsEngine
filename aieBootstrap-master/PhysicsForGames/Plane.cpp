@@ -2,19 +2,17 @@
 #include <iostream>
 
 Plane::Plane() :
-	PhysicsObject(PLANE)
+	PhysicsObject(PLANE) // passes the plane shape type into the physics object constructor
 {
 	m_normal = glm::vec2(0, 1);
 	m_distanceToOrigin = 0;
 }
-
-Plane::Plane(const glm::vec2 & normal, const float distance) :
-	PhysicsObject(PLANE)
+Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour) :
+	PhysicsObject(PLANE, colour)
 {
 	m_normal = normal;
 	m_distanceToOrigin = distance;
 }
-
 Plane::~Plane()
 {
 }
@@ -34,10 +32,9 @@ void Plane::MakeGizmo()
 	glm::vec2 centerPoint = m_normal * m_distanceToOrigin;
 	// easy to rotate through 90 degrees around z
 	glm::vec2 parallel(m_normal.y, -m_normal.x);
-	glm::vec4 colour(1, 1, 1, 1);
 	// uses the direction of the parallel normal for the direction of the line
 	glm::vec2 startPos = centerPoint + (parallel * lineSegmentLength);
 	glm::vec2 endPos = centerPoint - (parallel * lineSegmentLength);
 	// draws the line between the 2 positions and of the specified colour
-	aie::Gizmos::add2DLine(startPos, endPos, colour);
+	aie::Gizmos::add2DLine(startPos, endPos, m_colour);
 }

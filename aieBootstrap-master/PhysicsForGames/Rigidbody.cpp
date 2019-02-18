@@ -1,14 +1,15 @@
 #include "Rigidbody.h"
 #include <iostream>
 
-Rigidbody::Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float mass, const bool collision) :
-	PhysicsObject(shapeID) // passes the shapeID to the physics object constructor
+Rigidbody::Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float mass,
+	const glm::vec4& colour, const float elasticity) :
+	PhysicsObject(shapeID, colour) // passes the shapeID to the physics object constructor
 {
 	m_position = position;
 	m_velocity = velocity;
 	m_rotation = rotation;
 	m_mass = mass;
-	m_collision = collision;
+	m_elasticity = elasticity
 }
 Rigidbody::~Rigidbody()
 {
@@ -45,7 +46,7 @@ void Rigidbody::ApplyForceToActor(Rigidbody * actor2, const glm::vec2& force)
 	this->ApplyForce(-force);
 }
 
-void Rigidbody::SetPosition(const glm::vec2 position)
+void Rigidbody::SetPosition(const glm::vec2& position)
 {
 	m_position = position;
 }

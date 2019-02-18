@@ -6,9 +6,10 @@
 #include "Plane.h"
 #include "AABB.h"
 
-// function pointer array for doing our collisions
+// function pointer array for doing collisions
 typedef bool(*fn)(PhysicsObject*, PhysicsObject*);
 
+// collection of different collision check functions
 static fn collisionFunctionArray[] =
 {
 	PhysicsScene::Plane2Plane, PhysicsScene::Plane2Sphere, PhysicsScene::Plane2Box,
@@ -82,7 +83,7 @@ void PhysicsScene::Update(const float dt)
 		accumulatedTime -= m_timeStep;
 	}
 }
-
+// draws all the actors
 void PhysicsScene::UpdateGizmos()
 {
 	for (auto pActor : m_actors)
@@ -90,7 +91,7 @@ void PhysicsScene::UpdateGizmos()
 		pActor->MakeGizmo();
 	}
 }
-
+// calls the debug function of each actor
 void PhysicsScene::DebugScene()
 {
 	int count = 0;
@@ -102,6 +103,7 @@ void PhysicsScene::DebugScene()
 	}
 }
 
+// checks for collision between all actors in the scene
 void PhysicsScene::CheckForCollision()
 {	
 	int actorCount = m_actors.size();
@@ -116,7 +118,7 @@ void PhysicsScene::CheckForCollision()
 			int shapeID1 = object1->GetShapeType();
 			int shapeID2 = object2->GetShapeType();
 
-			// using function pointers
+			// finds the index of the collision function required
 			int functionID = (shapeID1 * SHAPE_COUNT) + shapeID2;
 			fn collisionFunctionPtr = collisionFunctionArray[functionID];
 			if (collisionFunctionPtr != nullptr)
@@ -128,14 +130,17 @@ void PhysicsScene::CheckForCollision()
 	}
 }
 
+// does nothing because planes don't collide
 bool PhysicsScene::Plane2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 {
 	return false;
 }
+// swaps the order of the objects and passes them into the opposite function
 bool PhysicsScene::Plane2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
 {
 	return Sphere2Plane(obj2, obj1);
 }
+// swaps the order of the objects and passes them into the opposite function
 bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2)
 {
 	return Box2Plane(obj2, obj1);
@@ -143,31 +148,44 @@ bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2)
 
 bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 {
-	// try to cast objects to sphere and sphere
+	// try to cast objects to sphere and plane
 	Sphere* sphere = dynamic_cast<Sphere*>(obj1);
 	Plane* plane = dynamic_cast<Plane*>(obj2);
-	// if we are successful then test for collision
+	// if successful then test for collision
 	if (sphere != nullptr && plane != nullptr)
 	{
+		// uses the plane's normal as the collision normal
 		glm::vec2 normal = plane->GetNormal();
+		// determines the distance between the circle and the plane
 		float sphereToPlane = glm::dot(sphere->GetPosition(), normal) - plane->GetDistance();
 
+		// the amount the circle overlaps the plane
 		float overlap = sphere->GetRadius() - sphereToPlane;
+		// if the overlap amount is positive then a collision occured
 		if (overlap > 0)
 		{
+			// uses the circle's velocity as the relative velocity
 			glm::vec2 relativeVelocity = sphere->GetVelocity();
 
-			// seperate the sphere from the plane
+			// sphere to plane restitution
+			// the angle between the negative velocity and collision normal
 			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), normal));
+			// the amount the circle needs to move perpendicular to the collision normal
 			float perpendicular = tanf(theta) * overlap;
+			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
 			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
+			// adds the restitution to the current circle position
 			sphere->SetPosition(sphere->GetPosition() + restitution);
 
-			float elasticity = 1;
+			// uses the elasticity of the circle
+			float elasticity = sphere->GetElasticity();
+			// "j" is the magnitude of the force vector that needs to be applied to the objects
+			// for planes the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m)
 			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / (1 / sphere->GetMass());
 
+			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-
+			// applies the force only on the circle because the plane is static
 			sphere->ApplyForce(force);
 
 			return true;
@@ -178,42 +196,61 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 }
 bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
 {
-	// try to cast objects to sphere and sphere
+	// try to cast objects to spheres
 	Sphere* sphere1 = dynamic_cast<Sphere*>(obj1);
 	Sphere* sphere2 = dynamic_cast<Sphere*>(obj2);
-	// if we are successful then test for collision
+	// if successful then test for collision
 	if (sphere1 != nullptr && sphere2 != nullptr)
 	{
-		// determines the distance between the two spheres
+		// determines the distance between the two circles
 		float distance = glm::distance(sphere1->GetPosition(), sphere2->GetPosition());
+		// sum of the two radii
 		float radii = sphere1->GetRadius() + sphere2->GetRadius();
 
 		// checks if the distance is less than the sum of the two radii
 		if (distance < radii)
 		{
+			// the collision normal is the vector between the two circle's positions
 			glm::vec2 normal = glm::normalize(sphere2->GetPosition() - sphere1->GetPosition());
+			// the difference between the velocities is the relative velocity
+			glm::vec2 relativeVelocity = sphere2->GetVelocity() - sphere1->GetVelocity();
 
+			// the sum of the two masses
 			float mass = sphere1->GetMass() + sphere2->GetMass();
+			// the amount the two circles overlap
 			float overlap = radii - distance;
-			float overlap1 = overlap * (sphere1->GetMass() / mass);
-			float overlap2 = overlap * (sphere2->GetMass() / mass);
+			// seperates the overlap based on the ratio of the masses of the two circles
+			float overlap1 = overlap * (sphere2->GetMass() / mass);
+			float overlap2 = overlap * (sphere1->GetMass() / mass);
 
-			float theta = acosf(glm::dot(-glm::normalize(sphere1->GetVelocity()), -normal));
+			// sphere to sphere restitution
+			// the angle between the velocity and collision normal
+			float theta = acosf(glm::dot(glm::normalize(relativeVelocity), -normal));
+			// the amount the circle needs to move perpendicular to the collision normal
 			float perpendicular = tanf(theta) * overlap1;
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * -glm::normalize(sphere1->GetVelocity());
+			// multiplies the velocity by the magnitude of the vector at ("perpendicular", "overlap")
+			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * glm::normalize(relativeVelocity);
+			// adds the restitution to the current circle position
 			sphere1->SetPosition(sphere1->GetPosition() + restitution);
 
-			theta = acosf(glm::dot(-glm::normalize(sphere2->GetVelocity()), -normal));
+			// the angle between the negative velocity and collision normal
+			theta = acosf(glm::dot(-glm::normalize(relativeVelocity), -normal));
+			// the amount the circle needs to move perpendicular to the collision normal
 			perpendicular = tanf(theta) * overlap2;
-			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * -glm::normalize(sphere2->GetVelocity());
+			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
+			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
+			// adds the restitution to the current circle position
 			sphere2->SetPosition(sphere2->GetPosition() + restitution);
 
-			glm::vec2 relativeVelocity = sphere2->GetVelocity() - sphere1->GetVelocity();
-			float elasticity = 1;
+			// uses the average elasticity of the two circles
+			float elasticity = (sphere1->GetElasticity() + sphere2->GetElasticity()) / 2.0f;
+			// "j" is the magnitude of the force vector that needs to be applied to the objects
+			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
 			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / sphere1->GetMass()) + (1 / sphere2->GetMass())));
 
+			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-
+			// applies the force on both objects in opposite directions
 			sphere1->ApplyForceToActor(sphere2, force);
 
 			return true;
@@ -224,59 +261,87 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
 }
 bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2)
 {
-	// try to cast objects to sphere and sphere
+	// try to cast objects to sphere and box
 	Sphere* sphere = dynamic_cast<Sphere*>(obj1);
 	AABB* box = dynamic_cast<AABB*>(obj2);
-	// if we are successful then test for collision
+	// if successful then test for collision
 	if (sphere != nullptr && box != nullptr)
 	{
+		// clamps the circle's position to the box's bounds, i.e. the closest point on the box relative to the circle
 		glm::vec2 clamp = glm::vec2(fmaxf(fminf(sphere->GetPosition().x, box->GetMax().x), box->GetMin().x),
 									fmaxf(fminf(sphere->GetPosition().y, box->GetMax().y), box->GetMin().y));
+		// if the distance between the closest point and the circle's is less than the circle's radius then a collision occured
 		if (glm::distance(clamp, sphere->GetPosition()) < sphere->GetRadius())
 		{
+			// the collision normal between the circle and the box will be perpendicular to one of the box's sides
 			glm::vec2 normal = glm::normalize(box->GetPosition() - sphere->GetPosition());
+			// sets the smaller of the two coordinates to 0
 			(fabsf(normal.x) > fabsf(normal.y)) ? normal.y = 0.0f : normal.x = 0.0f;
+			// ensures that the larger coordinate equals 1
 			normal = glm::normalize(normal);
+			// the difference between the velocities is the relative velocity
+			glm::vec2 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
 
+			// the amount the circle and box overlap
 			float overlap = 0.0f;
-
+			// checks if the circle's position is inside the box
 			if (clamp == sphere->GetPosition())
 			{
+				// checks if the collision normal is horizontal
 				if (normal.x != 0)
 				{
+					// calculates the overlap amount using the distance between the edge of the circle and the box's x position
 					overlap = box->GetExtents().x - (box->GetPosition().x - clamp.x) + sphere->GetRadius();
 				}
+				// checks if the collision normal is vertical
 				else if (normal.y != 0)
 				{
+					// calculates the overlap amount using the distance between the edge of the circle and the box's y position
 					overlap = box->GetExtents().y - (box->GetPosition().y - clamp.y) + sphere->GetRadius();
 				}
 			}
-			else
+			else // circle's center is not in the box
 			{
+				// scales the vector between the clamped position and the circle's center by the radius
 				glm::vec2 vectorViaClamp = glm::normalize(clamp - sphere->GetPosition()) * sphere->GetRadius();
+				// the overlap amount is the distance between the clamped position and the scaled clamped position
 				overlap = glm::distance(clamp, vectorViaClamp);
 			}
 
+			// the sum of the two masses
 			float mass = sphere->GetMass() + box->GetMass();
-			float overlap1 = overlap * (box->GetMass() / mass);
-			float overlap2 = overlap * (sphere->GetMass() / mass);
+			// seperates the overlap based on the ratio of the masses of the two objects
+			float overlap1 = overlap * (sphere->GetMass() / mass);
+			float overlap2 = overlap * (box->GetMass() / mass);
 
-			float theta = acosf(glm::dot(-glm::normalize(box->GetVelocity()), -normal));
+			// box to sphere restitution
+			// the angle between the negative velocity and collision normal
+			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), -normal));
+			// the amount the box needs to move perpendicular to the collision normal
 			float perpendicular = tanf(theta) * overlap1;
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * -glm::normalize(box->GetVelocity());
+			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
+			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
+			// adds the restitution to the current box's position
 			box->SetPosition(box->GetPosition() + restitution);
 
-			theta = acosf(glm::dot(-glm::normalize(sphere->GetVelocity()), -normal));
+			// the angle between the velocity and collision normal
+			theta = acosf(glm::dot(glm::normalize(relativeVelocity), -normal));
+			// the amount the circle needs to move perpendicular to the collision normal
 			perpendicular = tanf(theta) * overlap2;
-			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * -glm::normalize(sphere->GetVelocity());
+			// multiplies the velocity by the magnitude of the vector at ("perpendicular", "overlap")
+			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * glm::normalize(relativeVelocity);
+			// adds the restitution to the current circle position
 			sphere->SetPosition(sphere->GetPosition() + restitution);
 
-			glm::vec2 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
-			float elasticity = 1;
+			// uses the average elasticity of the two objects
+			float elasticity = (box->GetElasticity() + sphere->GetElasticity()) / 2.0f;
+			// "j" is the magnitude of the force vector that needs to be applied to the objects
+			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
 			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / box->GetMass()) + (1 / sphere->GetMass())));
 
+			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-
+			// applies the force on both objects in opposite directions
 			sphere->ApplyForceToActor(box, force);
 
 			return true;
@@ -288,18 +353,19 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2)
 
 bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 {
-	// try to cast objects to sphere and sphere
+	// try to cast objects to box and plane
 	AABB* box = dynamic_cast<AABB*>(obj1);
 	Plane* plane = dynamic_cast<Plane*>(obj2);
-
-	// if we are successful then test for collision
+	// if successful then test for collision
 	if (plane != nullptr && box != nullptr)
 	{
+		// contains the position of the corner and if it intersects the plane
 		struct Corner
 		{
 			glm::vec2 position;
 			bool intersect;
 		};
+		// collection of the corners
 		Corner corners[4];
 		corners[0] = { box->GetMin(), false };									// bottom left
 		corners[1] = {	glm::vec2(box->GetMin().x, box->GetMax().y), false };	// top left
@@ -308,70 +374,90 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 
 		for (unsigned int i = 0; i < 4; i++)
 		{
+			// checks if the corner is behind the plane
 			if (glm::dot(plane->GetNormal(), corners[i].position) - plane->GetDistance() <= 0)
 			{
+				// this corner intersects with the plane
 				corners[i].intersect = true;
 			}
 		}
 
+		// if any of the corners intersect with the plane then a collision occured
 		if (corners[0].intersect || corners[1].intersect || corners[2].intersect || corners[3].intersect)
 		{
+			// uses the plane's normal as the collision normal
 			glm::vec2 normal = plane->GetNormal();
+			// uses the box's velocity as the relative velocity
 			glm::vec2 relativeVelocity = box->GetVelocity();
 
+			// the amount the box overlaps the plane
 			float overlap = 0;
 
+			// out of the intersecting corners, finds which one is furthest from the plane to determine the overlap amount
 			for (int i = 0; i < 4; i++)
 			{
+				// checks if the corner is behind the plane
 				if (corners[i].intersect)
 				{
+					// gets the corner's distance from the plane
 					float distance = glm::dot(corners[i].position, normal) - plane->GetDistance();
+					// checks if the distance is greater the currently stored overlap amount
 					if (fabsf(overlap) < fabsf(distance))
 					{
+						// stores the distance as the new overlap
 						overlap = distance;
 					}
 				}
 			}
 
-			//if (normal.x == 0.0f || normal.y == 0.0f)
-			//{
-			//	if (normal.x == 1.0f || normal.y == 1.0f)
-			//	{
-			//		overlap = glm::dot(box->GetMin(), normal) - plane->GetDistance();
-			//	}
-			//	else if (normal.x == -1.0f || normal.y == -1.0f)
-			//	{
-			//		overlap = glm::dot(box->GetMax(), normal) - plane->GetDistance();
-			//	}
-			//}
-			//else if (normal.x > 0.0f && normal.y > 0.0f)
-			//{
-			//	overlap = glm::dot(box->GetMin(), normal) - plane->GetDistance();
-			//}
-			//else if (normal.x > 0.0f && normal.y < 0.0f)
-			//{
-			//	overlap = glm::dot(glm::vec2(box->GetMin().x, box->GetMax().y), normal) - plane->GetDistance();
-			//}
-			//else if (normal.x < 0.0f && normal.y < 0.0f)
-			//{
-			//	overlap = glm::dot(box->GetMax(), normal) - plane->GetDistance();
-			//}
-			//else if (normal.x < 0.0f && normal.y > 0.0f)
-			//{
-			//	overlap = glm::dot(glm::vec2(box->GetMax().x, box->GetMin().y), normal) - plane->GetDistance();
-			//}
+			// brute force method
+			/*if (normal.x == 0.0f || normal.y == 0.0f)
+			{
+				if (normal.x == 1.0f || normal.y == 1.0f)
+				{
+					overlap = glm::dot(box->GetMin(), normal) - plane->GetDistance();
+				}
+				else if (normal.x == -1.0f || normal.y == -1.0f)
+				{
+					overlap = glm::dot(box->GetMax(), normal) - plane->GetDistance();
+				}
+			}
+			else if (normal.x > 0.0f && normal.y > 0.0f)
+			{
+				overlap = glm::dot(box->GetMin(), normal) - plane->GetDistance();
+			}
+			else if (normal.x > 0.0f && normal.y < 0.0f)
+			{
+				overlap = glm::dot(glm::vec2(box->GetMin().x, box->GetMax().y), normal) - plane->GetDistance();
+			}
+			else if (normal.x < 0.0f && normal.y < 0.0f)
+			{
+				overlap = glm::dot(box->GetMax(), normal) - plane->GetDistance();
+			}
+			else if (normal.x < 0.0f && normal.y > 0.0f)
+			{
+				overlap = glm::dot(glm::vec2(box->GetMax().x, box->GetMin().y), normal) - plane->GetDistance();
+			}*/
 
-			// seperate the box from the plane
+			// box to plane restitution
+			// the angle between the negative velocity and collision normal
 			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), normal));
+			// the amount the box needs to move perpendicular to the collision normal
 			float perpendicular = tanf(theta) * overlap;
+			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
 			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
+			// adds the restitution to the current box's position
 			box->SetPosition(box->GetPosition() + restitution);
 
-			float elasticity = 1;
+			// uses the box's elasticity
+			float elasticity = box->GetElasticity();
+			// "j" is the magnitude of the force vector that needs to be applied to the objects
+			// for planes the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m)
 			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / (1 / box->GetMass());
 
+			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-
+			// applies the force only on the box because the plane is static
 			box->ApplyForce(force);
 
 			return true;
@@ -380,39 +466,92 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 
 	return false;
 }
+// swaps the order of the objects and passes them into the opposite function
 bool PhysicsScene::Box2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
 {
 	return Sphere2Box(obj2, obj1);
 }
 bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2)
 {
-	// try to cast objects to sphere and sphere
+	// try to cast objects to boxes
 	AABB* box1 = dynamic_cast<AABB*>(obj1);
 	AABB* box2 = dynamic_cast<AABB*>(obj2);
-	// if we are successful then test for collision
+	// if successful then test for collision
 	if (box1 != nullptr && box2 != nullptr)
 	{
+		// checks if there is a gap between any of the axis of the boxes
 		if (box1->GetMin().x > box2->GetMax().x ||
 			box1->GetMin().y > box2->GetMax().y ||
 			box1->GetMax().x < box2->GetMin().x ||
 			box1->GetMax().y < box2->GetMin().y)
 		{
+			// no collision
 			return false;
 		}
-		else
+		else // collision occured
 		{
+			// the collision normal between the boxes will be perpendicular to one of the box's sides
 			glm::vec2 normal = glm::normalize(box2->GetPosition() - box1->GetPosition());
+			// sets the smaller of the two coordinates to 0
 			(fabsf(normal.x) > fabsf(normal.y)) ? normal.y = 0.0f : normal.x = 0.0f;
+			// ensures that the larger coordinate equals 1
 			normal = glm::normalize(normal);
-
-
-
+			// the difference between the velocities is the relative velocity
 			glm::vec2 relativeVelocity = box2->GetVelocity() - box1->GetVelocity();
-			float elasticity = 1;
+
+			// projects each of the perpendicular sides onto the normal
+			float min1Dot = glm::dot(box1->GetMin(), normal);
+			float max1Dot = glm::dot(box1->GetMax(), normal);
+			float min2Dot = glm::dot(box2->GetMin(), normal);
+			float max2Dot = glm::dot(box2->GetMax(), normal);
+
+			// the amount the boxes overlap
+			float overlap = 0.0f;
+
+			// finds the smaller overlap between the boxes and stores it as the overlap amount
+			if ((max1Dot - min2Dot) < (max2Dot - min1Dot))
+			{
+				overlap = max1Dot - min2Dot;
+			}
+			else
+			{
+				overlap = max2Dot - min1Dot;
+			}
+			
+			// sum of the two masses
+			float mass = box1->GetMass() + box2->GetMass();
+			// seperates the overlap based on the ratio of the masses of the two objects
+			float overlap1 = overlap * (box2->GetMass() / mass);
+			float overlap2 = overlap * (box1->GetMass() / mass);
+
+			// box to box restitution
+			// the angle between the velocity and collision normal
+			float theta = acosf(glm::dot(glm::normalize(relativeVelocity), -normal));
+			// the amount the box needs to move perpendicular to the collision normal
+			float perpendicular = tanf(theta) * overlap1;
+			// multiplies the velocity by the magnitude of the vector at ("perpendicular", "overlap")
+			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * glm::normalize(relativeVelocity);
+			// adds the restitution to the current box's position
+			box1->SetPosition(box1->GetPosition() + restitution);
+
+			// the angle between the negative velocity and collision normal
+			theta = acosf(glm::dot(-glm::normalize(relativeVelocity), -normal));
+			// the amount the box needs to move perpendicular to the collision normal
+			perpendicular = tanf(theta) * overlap2;
+			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
+			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
+			// adds the restitution to the current box's position
+			box2->SetPosition(box2->GetPosition() + restitution);
+
+			// uses the average elasticity of the two objects
+			float elasticity = (box1->GetElasticity() + box2->GetElasticity()) / 2.0f;;
+			// "j" is the magnitude of the force vector that needs to be applied to the objects
+			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
 			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / box1->GetMass()) + (1 / box2->GetMass())));
 
+			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-
+			// applies the force on both objects in opposite directions
 			box1->ApplyForceToActor(box2, force);
 
 			return true;

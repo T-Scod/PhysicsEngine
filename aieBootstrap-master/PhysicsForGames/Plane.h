@@ -7,9 +7,11 @@ class Plane : public PhysicsObject
 {
 public:
 	Plane();
-	Plane(const glm::vec2& normal, const float distance);
+	// given values for initialisation
+	Plane(const glm::vec2& normal, const float distance, const glm::vec4& colour = glm::vec4(1, 1, 1, 1));
 	~Plane();
 
+	// does nothing because planes don't move
 	virtual void FixedUpdate(const glm::vec2& gravity, const float timeStep) {}
 	// prints the object values
 	virtual void Debug();
