@@ -8,7 +8,8 @@ class Plane : public PhysicsObject
 public:
 	Plane();
 	// given values for initialisation
-	Plane(const glm::vec2& normal, const float distance, const glm::vec4& colour = glm::vec4(1, 1, 1, 1));
+	Plane(const glm::vec2& normal, const float distance, const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float 탎 = 0.0f, const float 탃 = 0.0f);
+	Plane(const float inclination, const float distance, const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~Plane();
 
 	// does nothing because planes don't move

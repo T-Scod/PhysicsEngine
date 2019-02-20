@@ -7,10 +7,16 @@ Plane::Plane() :
 	m_normal = glm::vec2(0, 1);
 	m_distanceToOrigin = 0;
 }
-Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour) :
-	PhysicsObject(PLANE, colour)
+Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour, const float 탎, const float 탃) :
+	PhysicsObject(PLANE, colour, 탎, 탃)
 {
 	m_normal = normal;
+	m_distanceToOrigin = distance;
+}
+Plane::Plane(const float inclination, const float distance, const glm::vec4 & colour, const float 탎, const float 탃) :
+	PhysicsObject(PLANE, colour, 탎, 탃)
+{
+	m_normal = glm::normalize(glm::vec2(-sinf(inclination), cosf(inclination)));
 	m_distanceToOrigin = distance;
 }
 Plane::~Plane()

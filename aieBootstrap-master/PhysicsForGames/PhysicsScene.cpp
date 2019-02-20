@@ -7,7 +7,7 @@
 #include "AABB.h"
 
 // function pointer array for doing collisions
-typedef bool(*fn)(PhysicsObject*, PhysicsObject*);
+typedef bool(*fn)(PhysicsObject*, PhysicsObject*, const glm::vec2&);
 
 // collection of different collision check functions
 static fn collisionFunctionArray[] =
@@ -124,29 +124,29 @@ void PhysicsScene::CheckForCollision()
 			if (collisionFunctionPtr != nullptr)
 			{
 				// did a collision occur
-				collisionFunctionPtr(object1, object2);
+				collisionFunctionPtr(object1, object2, m_gravity);
 			}
 		}
 	}
 }
 
 // does nothing because planes don't collide
-bool PhysicsScene::Plane2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Plane2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
 	return false;
 }
 // swaps the order of the objects and passes them into the opposite function
-bool PhysicsScene::Plane2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Plane2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
-	return Sphere2Plane(obj2, obj1);
+	return Sphere2Plane(obj2, obj1, gravity);
 }
 // swaps the order of the objects and passes them into the opposite function
-bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
-	return Box2Plane(obj2, obj1);
+	return Box2Plane(obj2, obj1, gravity);
 }
 
-bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
 	// try to cast objects to sphere and plane
 	Sphere* sphere = dynamic_cast<Sphere*>(obj1);
@@ -185,8 +185,43 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-			// applies the force only on the circle because the plane is static
-			sphere->ApplyForce(force);
+
+			// the velocity after collision
+			glm::vec2 velocity = sphere->GetVelocity() + (force / sphere->GetMass()) + gravity;
+			// the force due to friction is perpendicular to the normal force
+			glm::vec2 frictionForce = glm::vec2(normal.y, -normal.x);
+			// projects the resolution force on the friction force
+			float frictionDirection = glm::dot(frictionForce, velocity);
+			// if the result is positive then the friction force is in the wrong direction
+			// the friction force is always against the resolution force
+			if (frictionDirection > 0.0f)
+			{
+				frictionForce *= -1.0f;
+			}
+
+			// checks if the object is not moving
+			if (sphere->GetVelocity() == glm::vec2(0.0f, 0.0f))
+			{
+				// multiplies the friction force by the static friction coefficient
+				frictionForce *= (sphere->GetStaticFriction() + plane->GetStaticFriction()) / 2.0f;
+			}
+			else
+			{
+				// multiplies the friction force by the kinetic friction coefficient
+				frictionForce *= (sphere->GetKineticFriction() + plane->GetKineticFriction()) / 2.0f;
+			}
+
+			// adds the friction force to the resolution force
+			velocity += frictionForce;
+			// projects the resolution force on the friction force to see if the force overcame the friction
+			frictionDirection = glm::dot(frictionForce, velocity);
+			// if the projection is negative then the force overcame the friction
+			if (frictionDirection <= 0.0f)
+			{
+				// applies the force only on the circle because the plane is static
+				sphere->ApplyForce(force + frictionForce);
+			}
+			//sphere->ApplyForce(force + frictionForce);
 
 			return true;
 		}
@@ -194,7 +229,7 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 
 	return false;
 }
-bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
 	// try to cast objects to spheres
 	Sphere* sphere1 = dynamic_cast<Sphere*>(obj1);
@@ -259,7 +294,7 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
 
 	return false;
 }
-bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
 	// try to cast objects to sphere and box
 	Sphere* sphere = dynamic_cast<Sphere*>(obj1);
@@ -351,7 +386,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2)
 	return false;
 }
 
-bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
 	// try to cast objects to box and plane
 	AABB* box = dynamic_cast<AABB*>(obj1);
@@ -467,11 +502,11 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2)
 	return false;
 }
 // swaps the order of the objects and passes them into the opposite function
-bool PhysicsScene::Box2Sphere(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Box2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
-	return Sphere2Box(obj2, obj1);
+	return Sphere2Box(obj2, obj1, gravity);
 }
-bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2)
+bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
 {
 	// try to cast objects to boxes
 	AABB* box1 = dynamic_cast<AABB*>(obj1);

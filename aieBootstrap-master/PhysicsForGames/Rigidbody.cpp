@@ -2,14 +2,14 @@
 #include <iostream>
 
 Rigidbody::Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float mass,
-	const glm::vec4& colour, const float elasticity) :
-	PhysicsObject(shapeID, colour) // passes the shapeID to the physics object constructor
+	const glm::vec4& colour, const float elasticity, const float 탎, const float 탃) :
+	PhysicsObject(shapeID, colour, 탎, 탃) // passes the shapeID to the physics object constructor
 {
 	m_position = position;
 	m_velocity = velocity;
 	m_rotation = rotation;
 	m_mass = mass;
-	m_elasticity = elasticity
+	m_elasticity = elasticity;
 }
 Rigidbody::~Rigidbody()
 {

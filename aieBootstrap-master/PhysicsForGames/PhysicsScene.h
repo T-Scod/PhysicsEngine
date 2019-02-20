@@ -30,23 +30,23 @@ public:
 	void CheckForCollision();
 
 	// checks for collision between plane and plane
-	static bool Plane2Plane(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Plane2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// does the reverse of a circle to plane collision check
-	static bool Plane2Sphere(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Plane2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// does the reverse of a box to plane collision check
-	static bool Plane2Box(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Plane2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// checks for collision between circle and plane
-	static bool Sphere2Plane(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Sphere2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// checks for collision between box and plane
-	static bool Sphere2Sphere(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Sphere2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// checks for collision between circle and box
-	static bool Sphere2Box(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Sphere2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// checks for collision between box and plane
-	static bool Box2Plane(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Box2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// does the reverse of a cirlce to box collision check
-	static bool Box2Sphere(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Box2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 	// cheks for collision between box and box
-	static bool Box2Box(PhysicsObject* obj1, PhysicsObject* obj2);
+	static bool Box2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
 
 protected:
 	// the value of gravity in this physics scene
