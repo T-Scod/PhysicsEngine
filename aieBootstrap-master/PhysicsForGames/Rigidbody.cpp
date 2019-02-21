@@ -51,6 +51,11 @@ void Rigidbody::SetPosition(const glm::vec2& position)
 	m_position = position;
 }
 
+void Rigidbody::SetVelocity(const glm::vec2 & velocity)
+{
+	m_velocity = velocity;
+}
+
 //void Rigidbody::SetMass(const float mass)
 //{
 //	m_mass = mass;

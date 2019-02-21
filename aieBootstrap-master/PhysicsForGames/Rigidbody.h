@@ -21,6 +21,7 @@ public:
 	void SetPosition(const glm::vec2& position);
 	glm::vec2 GetPosition() const { return m_position; }
 	float GetRotation() const { return m_rotation; }
+	void SetVelocity(const glm::vec2& velocity);
 	glm::vec2 GetVelocity() const { return m_velocity; }
 	float GetMass() const { return m_mass; }
 	float GetElasticity() const { return m_elasticity; }

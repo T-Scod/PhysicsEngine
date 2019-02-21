@@ -1,5 +1,4 @@
 #include "PhysicsScene.h"
-#include "Rigidbody.h"
 #include <list>
 #include <iostream>
 #include "Sphere.h"
@@ -7,7 +6,7 @@
 #include "AABB.h"
 
 // function pointer array for doing collisions
-typedef bool(*fn)(PhysicsObject*, PhysicsObject*, const glm::vec2&);
+typedef bool(*fn)(PhysicsObject*, PhysicsObject*, const glm::vec2&, const float);
 
 // collection of different collision check functions
 static fn collisionFunctionArray[] =
@@ -124,29 +123,29 @@ void PhysicsScene::CheckForCollision()
 			if (collisionFunctionPtr != nullptr)
 			{
 				// did a collision occur
-				collisionFunctionPtr(object1, object2, m_gravity);
+				collisionFunctionPtr(object1, object2, m_gravity, m_timeStep);
 			}
 		}
 	}
 }
 
 // does nothing because planes don't collide
-bool PhysicsScene::Plane2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Plane2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	return false;
 }
 // swaps the order of the objects and passes them into the opposite function
-bool PhysicsScene::Plane2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Plane2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
-	return Sphere2Plane(obj2, obj1, gravity);
+	return Sphere2Plane(obj2, obj1, gravity, timeStep);
 }
 // swaps the order of the objects and passes them into the opposite function
-bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
-	return Box2Plane(obj2, obj1, gravity);
+	return Box2Plane(obj2, obj1, gravity, timeStep);
 }
 
-bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to sphere and plane
 	Sphere* sphere = dynamic_cast<Sphere*>(obj1);
@@ -186,42 +185,8 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, cons
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
-			// the velocity after collision
-			glm::vec2 velocity = sphere->GetVelocity() + (force / sphere->GetMass()) + gravity;
-			// the force due to friction is perpendicular to the normal force
-			glm::vec2 frictionForce = glm::vec2(normal.y, -normal.x);
-			// projects the resolution force on the friction force
-			float frictionDirection = glm::dot(frictionForce, velocity);
-			// if the result is positive then the friction force is in the wrong direction
-			// the friction force is always against the resolution force
-			if (frictionDirection > 0.0f)
-			{
-				frictionForce *= -1.0f;
-			}
-
-			// checks if the object is not moving
-			if (sphere->GetVelocity() == glm::vec2(0.0f, 0.0f))
-			{
-				// multiplies the friction force by the static friction coefficient
-				frictionForce *= (sphere->GetStaticFriction() + plane->GetStaticFriction()) / 2.0f;
-			}
-			else
-			{
-				// multiplies the friction force by the kinetic friction coefficient
-				frictionForce *= (sphere->GetKineticFriction() + plane->GetKineticFriction()) / 2.0f;
-			}
-
-			// adds the friction force to the resolution force
-			velocity += frictionForce;
-			// projects the resolution force on the friction force to see if the force overcame the friction
-			frictionDirection = glm::dot(frictionForce, velocity);
-			// if the projection is negative then the force overcame the friction
-			if (frictionDirection <= 0.0f)
-			{
-				// applies the force only on the circle because the plane is static
-				sphere->ApplyForce(force + frictionForce);
-			}
-			//sphere->ApplyForce(force + frictionForce);
+			// applys the friction force to the object
+			ApplyFriction(sphere, force, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
 
 			return true;
 		}
@@ -229,7 +194,7 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, cons
 
 	return false;
 }
-bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to spheres
 	Sphere* sphere1 = dynamic_cast<Sphere*>(obj1);
@@ -285,8 +250,10 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, con
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-			// applies the force on both objects in opposite directions
-			sphere1->ApplyForceToActor(sphere2, force);
+
+			// applys the friction force on each object
+			ApplyFriction(sphere1, -force, gravity, timeStep, sphere2->GetStaticFriction(), sphere2->GetKineticFriction());
+			ApplyFriction(sphere2, force, gravity, timeStep, sphere1->GetStaticFriction(), sphere1->GetKineticFriction());
 
 			return true;
 		}
@@ -294,7 +261,7 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, con
 
 	return false;
 }
-bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to sphere and box
 	Sphere* sphere = dynamic_cast<Sphere*>(obj1);
@@ -376,8 +343,10 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-			// applies the force on both objects in opposite directions
-			sphere->ApplyForceToActor(box, force);
+
+			// applys the friction force on each object
+			ApplyFriction(sphere, -force, gravity, timeStep, box->GetStaticFriction(), box->GetKineticFriction());
+			ApplyFriction(box, force, gravity, timeStep, sphere->GetStaticFriction(), sphere->GetKineticFriction());
 
 			return true;
 		}
@@ -386,7 +355,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 	return false;
 }
 
-bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to box and plane
 	AABB* box = dynamic_cast<AABB*>(obj1);
@@ -445,35 +414,6 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 				}
 			}
 
-			// brute force method
-			/*if (normal.x == 0.0f || normal.y == 0.0f)
-			{
-				if (normal.x == 1.0f || normal.y == 1.0f)
-				{
-					overlap = glm::dot(box->GetMin(), normal) - plane->GetDistance();
-				}
-				else if (normal.x == -1.0f || normal.y == -1.0f)
-				{
-					overlap = glm::dot(box->GetMax(), normal) - plane->GetDistance();
-				}
-			}
-			else if (normal.x > 0.0f && normal.y > 0.0f)
-			{
-				overlap = glm::dot(box->GetMin(), normal) - plane->GetDistance();
-			}
-			else if (normal.x > 0.0f && normal.y < 0.0f)
-			{
-				overlap = glm::dot(glm::vec2(box->GetMin().x, box->GetMax().y), normal) - plane->GetDistance();
-			}
-			else if (normal.x < 0.0f && normal.y < 0.0f)
-			{
-				overlap = glm::dot(box->GetMax(), normal) - plane->GetDistance();
-			}
-			else if (normal.x < 0.0f && normal.y > 0.0f)
-			{
-				overlap = glm::dot(glm::vec2(box->GetMax().x, box->GetMin().y), normal) - plane->GetDistance();
-			}*/
-
 			// box to plane restitution
 			// the angle between the negative velocity and collision normal
 			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), normal));
@@ -492,8 +432,9 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-			// applies the force only on the box because the plane is static
-			box->ApplyForce(force);
+			
+			// applys the friction force on the object
+			ApplyFriction(box, force, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
 
 			return true;
 		}
@@ -502,11 +443,11 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 	return false;
 }
 // swaps the order of the objects and passes them into the opposite function
-bool PhysicsScene::Box2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Box2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
-	return Sphere2Box(obj2, obj1, gravity);
+	return Sphere2Box(obj2, obj1, gravity, timeStep);
 }
-bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity)
+bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to boxes
 	AABB* box1 = dynamic_cast<AABB*>(obj1);
@@ -586,12 +527,60 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
-			// applies the force on both objects in opposite directions
-			box1->ApplyForceToActor(box2, force);
+
+			// applys the friction force on each object
+			ApplyFriction(box1, -force, gravity, timeStep, box2->GetStaticFriction(), box2->GetKineticFriction());
+			ApplyFriction(box2, force, gravity, timeStep, box1->GetStaticFriction(), box1->GetKineticFriction());
 
 			return true;
 		}
 	}
 
 	return false;
+}
+
+void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃)
+{
+	// the velocity after collision
+	glm::vec2 velocity = obj->GetVelocity() + (force / obj->GetMass()) + (gravity * timeStep);
+	// the collision normal
+	glm::vec2 normal = glm::normalize(force);
+	// the force due to friction is perpendicular to the normal force
+	glm::vec2 frictionForce = glm::vec2(normal.y, -normal.x);
+	// projects the resolution force on the friction force
+	float frictionDirection = glm::dot(frictionForce, velocity);
+	// if the result is positive then the friction force is in the wrong direction
+	// the friction force is always against the resolution force
+	if (frictionDirection > 0.0f)
+	{
+		frictionForce *= -1.0f;
+	}
+
+	// checks if the object is not moving
+	if ((obj->GetVelocity() - (gravity * timeStep)) == glm::vec2(0.0f, 0.0f))
+	{
+		// multiplies the friction force by the static friction coefficient
+		frictionForce *= (obj->GetStaticFriction() + 탎) / 2.0f;
+	}
+	else
+	{
+		// multiplies the friction force by the kinetic friction coefficient
+		frictionForce *= (obj->GetKineticFriction() + 탃) / 2.0f;
+	}
+
+	// adds the friction force to the velocity after the collision
+	velocity += frictionForce;
+	// projects the velocity on the friction force to see if the force overcame the friction
+	frictionDirection = glm::dot(frictionForce, velocity);
+	// if the projection is negative then the force overcame the friction
+	if (frictionDirection <= 0.0f)
+	{
+		// applies the force only on the circle because the plane is static
+		obj->ApplyForce(force + frictionForce);
+	}
+	else // did not overcome friction
+	{
+		// stops the object
+		obj->SetVelocity(glm::vec2(0.0f, 0.0f));
+	}
 }

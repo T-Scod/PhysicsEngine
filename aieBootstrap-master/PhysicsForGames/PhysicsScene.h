@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "PhysicsObject.h"
+#include "Rigidbody.h"
 
 class PhysicsScene
 {
@@ -30,23 +31,32 @@ public:
 	void CheckForCollision();
 
 	// checks for collision between plane and plane
-	static bool Plane2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Plane2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// does the reverse of a circle to plane collision check
-	static bool Plane2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Plane2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// does the reverse of a box to plane collision check
-	static bool Plane2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Plane2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// checks for collision between circle and plane
-	static bool Sphere2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Sphere2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// checks for collision between box and plane
-	static bool Sphere2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Sphere2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// checks for collision between circle and box
-	static bool Sphere2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Sphere2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// checks for collision between box and plane
-	static bool Box2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Box2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// does the reverse of a cirlce to box collision check
-	static bool Box2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Box2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// cheks for collision between box and box
-	static bool Box2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity);
+	static bool Box2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+
+	/* PARAMS:
+	obj - the object that the friction force is being applied to
+	force - the calculated resolution force
+	gravity - force due to gravity
+	timeStep - fixed time step
+	탎 - the static friction coefficient of the object that obj is colliding with
+	탃 - the kinetic friction coefficient of the object that obj is colliding with*/
+	static void ApplyFriction(Rigidbody* obj, const glm::vec2& force, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃);
 
 protected:
 	// the value of gravity in this physics scene
