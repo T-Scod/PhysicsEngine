@@ -6,7 +6,8 @@ class Rigidbody : public PhysicsObject
 {
 public:
 	Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float elasticity = 1.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float elasticity = 1.0f,
+		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~Rigidbody();
 
 	// updates with a fixed time step
@@ -14,17 +15,22 @@ public:
 	// used to check the variable values
 	virtual void Debug();
 	// applys a force to the object
-	void ApplyForce(const glm::vec2& force);
-	// applys a force on another object from this object
-	void ApplyForceToActor(Rigidbody* actor2, const glm::vec2& force);
+	void ApplyForce(const glm::vec2& force, const glm::vec2& pos);
 
 	void SetPosition(const glm::vec2& position);
 	glm::vec2 GetPosition() const { return m_position; }
-	float GetRotation() const { return m_rotation; }
 	void SetVelocity(const glm::vec2& velocity);
 	glm::vec2 GetVelocity() const { return m_velocity; }
+		
+	float GetRotation() const { return m_rotation; }
+	float GetAngularVelocity() const { return m_angularVelocity; }
+	float GetMoment() const { return m_moment; }
+	
 	float GetMass() const { return m_mass; }
 	float GetElasticity() const { return m_elasticity; }
+
+	float GetLinearDrag() const { return m_linearDrag; }
+	float GetAngularDrag() const { return m_angularDrag; }
 
 	//// use for when mass is lost, i.e. when a rocket uses up fuel
 	//void SetMass(const float mass);
@@ -36,8 +42,15 @@ protected:
 	glm::vec2 m_velocity;
 	// stores the weight of the object
 	float m_mass;
-	// stores the object's rotation and is 2D so we only need a single float to represent our rotation
+	// stores the how much the object is rotated in radians
 	float m_rotation;
+	// change in rotation over time
+	float m_angularVelocity;
+	// represents the moment of inertia
+	float m_moment;
 	// the elasticity coefficient of the object
 	float m_elasticity;
+	// scalar values that reduces velocity each frame due to "air resistance"
+	float m_linearDrag;
+	float m_angularDrag;
 };

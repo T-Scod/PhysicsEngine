@@ -185,8 +185,10 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, cons
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
+			glm::vec2 contact = sphere->GetPosition() + (normal * -sphere->GetRadius());
+
 			// applys the friction force to the object
-			ApplyFriction(sphere, force, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
+			ApplyFriction(sphere, force, contact, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
 
 			return true;
 		}
@@ -251,9 +253,11 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, con
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
+			glm::vec2 contact = 0.5f * (sphere1->GetPosition() + sphere2->GetPosition());
+
 			// applys the friction force on each object
-			ApplyFriction(sphere1, -force, gravity, timeStep, sphere2->GetStaticFriction(), sphere2->GetKineticFriction());
-			ApplyFriction(sphere2, force, gravity, timeStep, sphere1->GetStaticFriction(), sphere1->GetKineticFriction());
+			ApplyFriction(sphere1, -force, contact, gravity, timeStep, sphere2->GetStaticFriction(), sphere2->GetKineticFriction());
+			ApplyFriction(sphere2, force, contact, gravity, timeStep, sphere1->GetStaticFriction(), sphere1->GetKineticFriction());
 
 			return true;
 		}
@@ -345,8 +349,8 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			glm::vec2 force = normal * j;
 
 			// applys the friction force on each object
-			ApplyFriction(sphere, -force, gravity, timeStep, box->GetStaticFriction(), box->GetKineticFriction());
-			ApplyFriction(box, force, gravity, timeStep, sphere->GetStaticFriction(), sphere->GetKineticFriction());
+			ApplyFriction(sphere, -force, clamp, gravity, timeStep, box->GetStaticFriction(), box->GetKineticFriction());
+			ApplyFriction(box, force, clamp, gravity, timeStep, sphere->GetStaticFriction(), sphere->GetKineticFriction());
 
 			return true;
 		}
@@ -433,8 +437,10 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 			
+			glm::vec2 contact = box->GetPosition() + (-normal * overlap);
+
 			// applys the friction force on the object
-			ApplyFriction(box, force, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
+			ApplyFriction(box, force, contact, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
 
 			return true;
 		}
@@ -528,9 +534,11 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
+			glm::vec2 contact = box1->GetPosition() + (normal * box1->GetExtents());
+
 			// applys the friction force on each object
-			ApplyFriction(box1, -force, gravity, timeStep, box2->GetStaticFriction(), box2->GetKineticFriction());
-			ApplyFriction(box2, force, gravity, timeStep, box1->GetStaticFriction(), box1->GetKineticFriction());
+			ApplyFriction(box1, -force, contact, gravity, timeStep, box2->GetStaticFriction(), box2->GetKineticFriction());
+			ApplyFriction(box2, force, contact, gravity, timeStep, box1->GetStaticFriction(), box1->GetKineticFriction());
 
 			return true;
 		}
@@ -539,7 +547,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 	return false;
 }
 
-void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃)
+void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const glm::vec2& contact, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃)
 {
 	// the velocity after collision
 	glm::vec2 velocity = obj->GetVelocity() + (force / obj->GetMass()) + (gravity * timeStep);
@@ -576,7 +584,7 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 	if (frictionDirection <= 0.0f)
 	{
 		// applies the force only on the circle because the plane is static
-		obj->ApplyForce(force + frictionForce);
+		obj->ApplyForce(force + frictionForce, contact);
 	}
 	else // did not overcome friction
 	{

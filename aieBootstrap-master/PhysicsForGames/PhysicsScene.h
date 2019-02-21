@@ -52,11 +52,12 @@ public:
 	/* PARAMS:
 	obj - the object that the friction force is being applied to
 	force - the calculated resolution force
+	contact - the point of contact
 	gravity - force due to gravity
 	timeStep - fixed time step
 	탎 - the static friction coefficient of the object that obj is colliding with
 	탃 - the kinetic friction coefficient of the object that obj is colliding with*/
-	static void ApplyFriction(Rigidbody* obj, const glm::vec2& force, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃);
+	static void ApplyFriction(Rigidbody* obj, const glm::vec2& force, const glm::vec2& contact, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃);
 
 protected:
 	// the value of gravity in this physics scene
