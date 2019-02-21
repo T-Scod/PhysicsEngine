@@ -58,6 +58,7 @@ public:
 	탎 - the static friction coefficient of the object that obj is colliding with
 	탃 - the kinetic friction coefficient of the object that obj is colliding with*/
 	static void ApplyFriction(Rigidbody* obj, const glm::vec2& force, const glm::vec2& contact, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃);
+	static void ApplyResitiution(Rigidbody* obj, const glm::vec2& velocity, const glm::vec2& normal, const float overlap);
 
 protected:
 	// the value of gravity in this physics scene

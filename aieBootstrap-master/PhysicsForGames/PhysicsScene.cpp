@@ -167,14 +167,7 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, cons
 			glm::vec2 relativeVelocity = sphere->GetVelocity();
 
 			// sphere to plane restitution
-			// the angle between the negative velocity and collision normal
-			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), normal));
-			// the amount the circle needs to move perpendicular to the collision normal
-			float perpendicular = tanf(theta) * overlap;
-			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
-			// adds the restitution to the current circle position
-			sphere->SetPosition(sphere->GetPosition() + restitution);
+			ApplyResitiution(sphere, -relativeVelocity, normal, overlap);
 
 			// uses the elasticity of the circle
 			float elasticity = sphere->GetElasticity();
@@ -226,23 +219,8 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, con
 			float overlap2 = overlap * (sphere1->GetMass() / mass);
 
 			// sphere to sphere restitution
-			// the angle between the velocity and collision normal
-			float theta = acosf(glm::dot(glm::normalize(relativeVelocity), -normal));
-			// the amount the circle needs to move perpendicular to the collision normal
-			float perpendicular = tanf(theta) * overlap1;
-			// multiplies the velocity by the magnitude of the vector at ("perpendicular", "overlap")
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * glm::normalize(relativeVelocity);
-			// adds the restitution to the current circle position
-			sphere1->SetPosition(sphere1->GetPosition() + restitution);
-
-			// the angle between the negative velocity and collision normal
-			theta = acosf(glm::dot(-glm::normalize(relativeVelocity), -normal));
-			// the amount the circle needs to move perpendicular to the collision normal
-			perpendicular = tanf(theta) * overlap2;
-			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
-			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
-			// adds the restitution to the current circle position
-			sphere2->SetPosition(sphere2->GetPosition() + restitution);
+			ApplyResitiution(sphere1, relativeVelocity, -normal, overlap1);
+			ApplyResitiution(sphere2, -relativeVelocity, normal, overlap2);
 
 			// uses the average elasticity of the two circles
 			float elasticity = (sphere1->GetElasticity() + sphere2->GetElasticity()) / 2.0f;
@@ -274,8 +252,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 	if (sphere != nullptr && box != nullptr)
 	{
 		// clamps the circle's position to the box's bounds, i.e. the closest point on the box relative to the circle
-		glm::vec2 clamp = glm::vec2(fmaxf(fminf(sphere->GetPosition().x, box->GetMax().x), box->GetMin().x),
-									fmaxf(fminf(sphere->GetPosition().y, box->GetMax().y), box->GetMin().y));
+		glm::vec2 clamp = glm::clamp(sphere->GetPosition(), box->GetMin(), box->GetMax());
 		// if the distance between the closest point and the circle's is less than the circle's radius then a collision occured
 		if (glm::distance(clamp, sphere->GetPosition()) < sphere->GetRadius())
 		{
@@ -321,23 +298,8 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			float overlap2 = overlap * (box->GetMass() / mass);
 
 			// box to sphere restitution
-			// the angle between the negative velocity and collision normal
-			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), -normal));
-			// the amount the box needs to move perpendicular to the collision normal
-			float perpendicular = tanf(theta) * overlap1;
-			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
-			// adds the restitution to the current box's position
-			box->SetPosition(box->GetPosition() + restitution);
-
-			// the angle between the velocity and collision normal
-			theta = acosf(glm::dot(glm::normalize(relativeVelocity), -normal));
-			// the amount the circle needs to move perpendicular to the collision normal
-			perpendicular = tanf(theta) * overlap2;
-			// multiplies the velocity by the magnitude of the vector at ("perpendicular", "overlap")
-			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * glm::normalize(relativeVelocity);
-			// adds the restitution to the current circle position
-			sphere->SetPosition(sphere->GetPosition() + restitution);
+			ApplyResitiution(sphere, relativeVelocity, -normal, overlap1);
+			ApplyResitiution(box, -relativeVelocity, normal, overlap1);
 
 			// uses the average elasticity of the two objects
 			float elasticity = (box->GetElasticity() + sphere->GetElasticity()) / 2.0f;
@@ -419,14 +381,7 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			}
 
 			// box to plane restitution
-			// the angle between the negative velocity and collision normal
-			float theta = acosf(glm::dot(-glm::normalize(relativeVelocity), normal));
-			// the amount the box needs to move perpendicular to the collision normal
-			float perpendicular = tanf(theta) * overlap;
-			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
-			// adds the restitution to the current box's position
-			box->SetPosition(box->GetPosition() + restitution);
+			ApplyResitiution(box, -relativeVelocity, normal, overlap);
 
 			// uses the box's elasticity
 			float elasticity = box->GetElasticity();
@@ -507,23 +462,8 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			float overlap2 = overlap * (box1->GetMass() / mass);
 
 			// box to box restitution
-			// the angle between the velocity and collision normal
-			float theta = acosf(glm::dot(glm::normalize(relativeVelocity), -normal));
-			// the amount the box needs to move perpendicular to the collision normal
-			float perpendicular = tanf(theta) * overlap1;
-			// multiplies the velocity by the magnitude of the vector at ("perpendicular", "overlap")
-			glm::vec2 restitution = glm::distance(glm::vec2(perpendicular, overlap1), glm::vec2(0, 0)) * glm::normalize(relativeVelocity);
-			// adds the restitution to the current box's position
-			box1->SetPosition(box1->GetPosition() + restitution);
-
-			// the angle between the negative velocity and collision normal
-			theta = acosf(glm::dot(-glm::normalize(relativeVelocity), -normal));
-			// the amount the box needs to move perpendicular to the collision normal
-			perpendicular = tanf(theta) * overlap2;
-			// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
-			restitution = glm::distance(glm::vec2(perpendicular, overlap2), glm::vec2(0, 0)) * -glm::normalize(relativeVelocity);
-			// adds the restitution to the current box's position
-			box2->SetPosition(box2->GetPosition() + restitution);
+			ApplyResitiution(box1, relativeVelocity, -normal, overlap1);
+			ApplyResitiution(box2, -relativeVelocity, normal, overlap2);
 
 			// uses the average elasticity of the two objects
 			float elasticity = (box1->GetElasticity() + box2->GetElasticity()) / 2.0f;;
@@ -591,4 +531,16 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 		// stops the object
 		obj->SetVelocity(glm::vec2(0.0f, 0.0f));
 	}
+}
+
+void PhysicsScene::ApplyResitiution(Rigidbody * obj, const glm::vec2 & velocity, const glm::vec2 & normal, const float overlap)
+{
+	// the angle between the velocity and collision normal
+	float theta = acosf(glm::dot(glm::normalize(velocity), normal));
+	// the amount the box needs to move perpendicular to the collision normal
+	float perpendicular = tanf(theta) * overlap;
+	// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
+	glm::vec2 restitution = glm::length(glm::vec2(perpendicular, overlap)) * glm::normalize(velocity);
+	// adds the restitution to the current object's position
+	obj->SetPosition(obj->GetPosition() + restitution);
 }

@@ -59,7 +59,7 @@ void Rigidbody::ApplyForce(const glm::vec2& force, const glm::vec2& pos)
 	// adds the instantaneous acceleration to the current velocity
 	m_velocity += force / m_mass;
 	float av = ((force.y * pos.x) - (force.x * pos.y)) / (m_moment);
-	m_angularVelocity = av;
+	m_angularVelocity += av;
 }
 
 void Rigidbody::SetPosition(const glm::vec2& position)
