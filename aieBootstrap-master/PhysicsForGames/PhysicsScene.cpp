@@ -524,7 +524,7 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 	if (frictionDirection <= 0.0f)
 	{
 		// applies the force only on the circle because the plane is static
-		obj->ApplyForce(force + frictionForce, contact);
+		obj->ApplyForce(force + frictionForce, contact - obj->GetPosition());
 	}
 	else // did not overcome friction
 	{
