@@ -6,7 +6,7 @@ class Rigidbody : public PhysicsObject
 {
 public:
 	Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float elasticity = 1.0f,
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float elasticity = 1.0f,
 		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float µs = 0.0f, const float µk = 0.0f);
 	~Rigidbody();
 

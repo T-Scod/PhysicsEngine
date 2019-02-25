@@ -7,17 +7,19 @@ enum ShapeType
 {
 	PLANE = 0, // line
 	SPHERE, // circle
-	BOX // square
+	BOX, // square
+	POLY // polygon
 };
 
 // the amount of shapes being delt with
-const unsigned int SHAPE_COUNT = BOX + 1;
+const unsigned int SHAPE_COUNT = POLY + 1;
 
 // abstract class
 class PhysicsObject
 {
 protected:
-	PhysicsObject(const ShapeType& a_shapeID, const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float 탎 = 0.0f, const float 탃 = 0.0f) :
+	PhysicsObject(const ShapeType& a_shapeID,
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float 탎 = 0.0f, const float 탃 = 0.0f) :
 		m_shapeID(a_shapeID), m_colour(colour), m_탎(탎), m_탃(탃) {}
 
 public:

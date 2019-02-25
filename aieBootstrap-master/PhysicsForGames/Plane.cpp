@@ -1,12 +1,6 @@
 #include "Plane.h"
 #include <iostream>
 
-Plane::Plane() :
-	PhysicsObject(PLANE) // passes the plane shape type into the physics object constructor
-{
-	m_normal = glm::vec2(0, 1);
-	m_distanceToOrigin = 0;
-}
 Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour, const float 탎, const float 탃) :
 	PhysicsObject(PLANE, colour, 탎, 탃)
 {
@@ -33,7 +27,7 @@ void Plane::Debug()
 void Plane::MakeGizmo()
 {
 	// length of the line
-	float lineSegmentLength = 300;
+	float lineSegmentLength = 300.0f;
 	// location of the center of the line
 	glm::vec2 centerPoint = m_normal * m_distanceToOrigin;
 	// easy to rotate through 90 degrees around z

@@ -9,11 +9,12 @@
 typedef bool(*fn)(PhysicsObject*, PhysicsObject*, const glm::vec2&, const float);
 
 // collection of different collision check functions
-static fn collisionFunctionArray[] =
+static fn collisionFunctionArray[SHAPE_COUNT][SHAPE_COUNT] =
 {
-	PhysicsScene::Plane2Plane, PhysicsScene::Plane2Sphere, PhysicsScene::Plane2Box,
-	PhysicsScene::Sphere2Plane, PhysicsScene::Sphere2Sphere, PhysicsScene::Sphere2Box,
-	PhysicsScene::Box2Plane, PhysicsScene::Box2Sphere, PhysicsScene::Box2Box
+	{PhysicsScene::Plane2Plane, PhysicsScene::Plane2Sphere, PhysicsScene::Plane2Box, PhysicsScene::Plane2Poly},
+	{PhysicsScene::Sphere2Plane, PhysicsScene::Sphere2Sphere, PhysicsScene::Sphere2Box, PhysicsScene::Sphere2Poly},
+	{PhysicsScene::Box2Plane, PhysicsScene::Box2Sphere, PhysicsScene::Box2Box, PhysicsScene::Box2Poly},
+	{PhysicsScene::Poly2Plane, PhysicsScene::Poly2Sphere, PhysicsScene::Poly2Box, PhysicsScene::Poly2Poly}
 };
 
 PhysicsScene::PhysicsScene()
@@ -117,9 +118,7 @@ void PhysicsScene::CheckForCollision()
 			int shapeID1 = object1->GetShapeType();
 			int shapeID2 = object2->GetShapeType();
 
-			// finds the index of the collision function required
-			int functionID = (shapeID1 * SHAPE_COUNT) + shapeID2;
-			fn collisionFunctionPtr = collisionFunctionArray[functionID];
+			fn collisionFunctionPtr = collisionFunctionArray[shapeID1][shapeID2];
 			if (collisionFunctionPtr != nullptr)
 			{
 				// did a collision occur
@@ -129,6 +128,7 @@ void PhysicsScene::CheckForCollision()
 	}
 }
 
+#pragma region Plane Collision
 // does nothing because planes don't collide
 bool PhysicsScene::Plane2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
@@ -144,7 +144,14 @@ bool PhysicsScene::Plane2Box(PhysicsObject * obj1, PhysicsObject * obj2, const g
 {
 	return Box2Plane(obj2, obj1, gravity, timeStep);
 }
+// swaps the order of the objects and passes them into the opposite function
+bool PhysicsScene::Plane2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return Poly2Plane(obj2, obj1, gravity, timeStep);
+}
+#pragma endregion
 
+#pragma region Sphere Collision
 bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to sphere and plane
@@ -320,7 +327,14 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 
 	return false;
 }
+// swaps the order of the objects and passes them into the opposite function
+bool PhysicsScene::Sphere2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return false;
+}
+#pragma endregion
 
+#pragma region Box Collision
 bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2& gravity, const float timeStep)
 {
 	// try to cast objects to box and plane
@@ -486,6 +500,31 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 
 	return false;
 }
+// swaps the order of the objects and passes them into the opposite function
+bool PhysicsScene::Box2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return false;
+}
+#pragma endregion
+
+#pragma region Poly Collision
+bool PhysicsScene::Poly2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return false;
+}
+bool PhysicsScene::Poly2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return false;
+}
+bool PhysicsScene::Poly2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return false;
+}
+bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
+{
+	return false;
+}
+#pragma endregion
 
 void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const glm::vec2& contact, const glm::vec2 gravity, const float timeStep, const float µs, const float µk)
 {

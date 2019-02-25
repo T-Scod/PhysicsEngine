@@ -30,34 +30,62 @@ public:
 	// checks if any actors are colliding with each other
 	void CheckForCollision();
 
+#pragma region Plane Collision
 	// checks for collision between plane and plane
 	static bool Plane2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// does the reverse of a circle to plane collision check
 	static bool Plane2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// does the reverse of a box to plane collision check
 	static bool Plane2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+	// does the reverse of a poly to plane collision check
+	static bool Plane2Poly(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+#pragma endregion
+
+#pragma region Sphere Collision
 	// checks for collision between circle and plane
 	static bool Sphere2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// checks for collision between box and plane
 	static bool Sphere2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// checks for collision between circle and box
 	static bool Sphere2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+	// does the reverse of a poly to circle collision check
+	static bool Sphere2Poly(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+#pragma endregion
+
+#pragma region Box Collision
 	// checks for collision between box and plane
 	static bool Box2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// does the reverse of a cirlce to box collision check
 	static bool Box2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
 	// cheks for collision between box and box
 	static bool Box2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+	// does the reverse of a poly to box collision check
+	static bool Box2Poly(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+#pragma endregion
 
-	/* PARAMS:
-	obj - the object that the friction force is being applied to
-	force - the calculated resolution force
-	contact - the point of contact
-	gravity - force due to gravity
-	timeStep - fixed time step
-	탎 - the static friction coefficient of the object that obj is colliding with
-	탃 - the kinetic friction coefficient of the object that obj is colliding with*/
+#pragma region Poly Collision
+	// cheks for collision between poly and plane
+	static bool Poly2Plane(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+	// cheks for collision between poly and circle
+	static bool Poly2Sphere(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+	// cheks for collision between poly and box
+	static bool Poly2Box(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+	// cheks for collision between poly and poly
+	static bool Poly2Poly(PhysicsObject* obj1, PhysicsObject* obj2, const glm::vec2& gravity, const float timeStep);
+#pragma endregion
+
+#pragma region Apply Friction Parameters
+	//obj - the object that the friction force is being applied to
+	//force - the calculated resolution force
+	//contact - the point of contact
+	//gravity - force due to gravity
+	//timeStep - fixed time step
+	//탎 - the static friction coefficient of the object that obj is colliding with
+	//탃 - the kinetic friction coefficient of the object that obj is colliding with
+#pragma endregion
+	// applies a friction force to the object
 	static void ApplyFriction(Rigidbody* obj, const glm::vec2& force, const glm::vec2& contact, const glm::vec2 gravity, const float timeStep, const float 탎, const float 탃);
+	// restitutes the object based on its velocity
 	static void ApplyResitiution(Rigidbody* obj, const glm::vec2& velocity, const glm::vec2& normal, const float overlap);
 
 protected:

@@ -6,10 +6,10 @@ class AABB : public Rigidbody
 {
 public:
 	AABB(const glm::vec2& position, const glm::vec2& velocity, const float width, const float height, const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float elasticity = 1.0f,
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float elasticity = 1.0f,
 		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	AABB(const glm::vec2& position, const float inclination, const float speed, const float width, const float height, const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const float elasticity = 1.0f,
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float elasticity = 1.0f,
 		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~AABB();
 
