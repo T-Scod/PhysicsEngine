@@ -1,9 +1,11 @@
 #include "PhysicsScene.h"
 #include <list>
 #include <iostream>
-#include "Sphere.h"
+#include <limits>
 #include "Plane.h"
+#include "Sphere.h"
 #include "AABB.h"
+#include "Poly.h"
 
 // function pointer array for doing collisions
 typedef bool(*fn)(PhysicsObject*, PhysicsObject*, const glm::vec2&, const float);
@@ -330,7 +332,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 // swaps the order of the objects and passes them into the opposite function
 bool PhysicsScene::Sphere2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
 {
-	return false;
+	return Poly2Sphere(obj2, obj1, gravity, timeStep);
 }
 #pragma endregion
 
@@ -503,7 +505,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 // swaps the order of the objects and passes them into the opposite function
 bool PhysicsScene::Box2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
 {
-	return false;
+	return Poly2Box(obj2, obj1, gravity, timeStep);
 }
 #pragma endregion
 
@@ -522,6 +524,86 @@ bool PhysicsScene::Poly2Box(PhysicsObject * obj1, PhysicsObject * obj2, const gl
 }
 bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
 {
+	Poly* poly1 = dynamic_cast<Poly*>(obj1);
+	Poly* poly2 = dynamic_cast<Poly*>(obj2);
+	if (poly1 != nullptr && poly2 != nullptr)
+	{
+		if (glm::distance(poly1->GetPosition(), poly2->GetPosition()) <= poly1->GetRadius() + poly2->GetRadius())
+		{
+			float overlap = std::numeric_limits<float>::max();
+			glm::vec2 normal = glm::vec2(0.0f, 0.0f);
+			std::vector<glm::vec2> axis1 = poly1->GetAxis();
+			std::vector<glm::vec2> axis2 = poly2->GetAxis();
+			
+			for each (glm::vec2 axis in axis1)
+			{
+				glm::vec2 proj1 = poly1->Project(axis);
+				glm::vec2 proj2 = poly2->Project(axis);
+
+				if (!poly1->Overlap(proj1, proj2))
+				{
+					return false;
+				}
+				else
+				{
+					float o = poly1->GetOverlap(proj1, proj2);
+					if (o < overlap)
+					{
+						overlap = o;
+						normal = axis;
+					}
+				}
+			}
+
+			for each (glm::vec2 axis in axis2)
+			{
+				glm::vec2 proj1 = poly1->Project(axis);
+				glm::vec2 proj2 = poly2->Project(axis);
+
+				if (!poly1->Overlap(proj1, proj2))
+				{
+					return false;
+				}
+				else
+				{
+					float o = poly1->GetOverlap(proj1, proj2);
+					if (o < overlap)
+					{
+						overlap = o;
+						normal = axis;
+					}
+				}
+			}
+
+			// the difference between the velocities is the relative velocity
+			glm::vec2 relativeVelocity = poly2->GetVelocity() - poly1->GetVelocity();
+			// sum of the two masses
+			float mass = poly1->GetMass() + poly2->GetMass();
+			// seperates the overlap based on the ratio of the masses of the two objects
+			float overlap1 = overlap * (poly2->GetMass() / mass);
+			float overlap2 = overlap * (poly1->GetMass() / mass);
+
+			// box to box restitution
+			ApplyResitiution(poly1, relativeVelocity, -normal, overlap1);
+			ApplyResitiution(poly2, -relativeVelocity, normal, overlap2);
+
+			// uses the average elasticity of the two objects
+			float elasticity = (poly1->GetElasticity() + poly2->GetElasticity()) / 2.0f;;
+			// "j" is the magnitude of the force vector that needs to be applied to the objects
+			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
+			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / poly1->GetMass()) + (1 / poly2->GetMass())));
+
+			// scales the normal by the impulse magnitude to get the resolution force
+			glm::vec2 force = normal * j;
+
+			glm::vec2 contact = poly1->GetContact(poly2, normal, overlap);
+
+			// applys the friction force on each object
+			ApplyFriction(poly1, -force, contact, gravity, timeStep, poly2->GetStaticFriction(), poly2->GetKineticFriction());
+			ApplyFriction(poly2, force, contact, gravity, timeStep, poly1->GetStaticFriction(), poly1->GetKineticFriction());
+		}
+	}
+
 	return false;
 }
 #pragma endregion
