@@ -1,4 +1,5 @@
 #include "Poly.h"
+#include <limits>
 
 Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, const float mass,
 	const glm::vec4 & colour, const float elasticity, const float linearDrag, const float angularDrag, const float µs, const float µk) :
@@ -137,9 +138,137 @@ bool Poly::Overlap(const glm::vec2 & proj1, const glm::vec2 & proj2) const
 	return true;
 }
 
-glm::vec2 Poly::GetContact(const Poly * other, const glm::vec2 & normal, const float overlap) const
+std::vector<glm::vec2> Poly::ContactPoints(const Poly * other, const glm::vec2 & normal) const
 {
-	return glm::vec2();
+	std::vector<glm::vec2> clippedPoints;
+
+	Edge edge1 = this->BestEdge(normal);
+	Edge edge2 = other->BestEdge(-normal);
+
+	Edge ref, inc;
+	bool flip = false;
+	if (fabsf(glm::dot(edge1.edge, normal)) <= fabsf(glm::dot(edge2.edge, normal)))
+	{
+		ref = edge1;
+		inc = edge2;
+	}
+	else
+	{
+		ref = edge2;
+		inc = edge1;
+
+		flip = true;
+	}
+
+	glm::vec2 refEdge = ref.edge;
+	refEdge = glm::normalize(refEdge);
+
+	float overlap1 = glm::dot(refEdge, ref.vert1);
+	Clip(clippedPoints, inc.vert1, inc.vert2, refEdge, overlap1);
+	if (clippedPoints.size() < 2)
+	{
+		return;
+	}
+
+	float overlap2 = glm::dot(refEdge, ref.vert2);
+	Clip(clippedPoints, clippedPoints[0], clippedPoints[1], -refEdge, -overlap2);
+	if (clippedPoints.size() < 2)
+	{
+		return;
+	}
+
+	glm::vec2 refNorm = Cross(ref.edge, -1.0f);
+	if (flip)
+	{
+		refNorm *= -1.0f;
+	}
+
+	float max = glm::dot(refNorm, ref.max);
+
+	if (glm::dot(refNorm, clippedPoints[0]) - max < 0.0f)
+	{
+		clippedPoints.erase(clippedPoints.begin());
+	}
+	if (glm::dot(refNorm, clippedPoints[1]) - max < 0.0f)
+	{
+		clippedPoints.erase(clippedPoints.begin() + 1);
+	}
+
+	return clippedPoints;
+}
+
+Edge Poly::BestEdge(const glm::vec2 & normal) const
+{
+	float max = std::numeric_limits<float>::min();
+	unsigned int index = 0;
+	for (int i = 0; i < m_vertices.size(); i++)
+	{
+		float projection = glm::dot(normal, m_vertices[i]);
+		if (projection > max)
+		{
+			max = projection;
+			index = i;
+		}
+	}
+
+	glm::vec2 vert = m_vertices[index];
+	glm::vec2 vertNext = m_vertices[(index + 1 == m_vertices.size()) ? 0 : index + 1];
+	glm::vec2 vertPrev = m_vertices[(index - 1 < 0) ? m_vertices.size() : index - 1];
+
+	glm::vec2 leftEdge = vert - vertPrev;
+	glm::vec2 rightEdge = vert - vertNext;
+	leftEdge = glm::normalize(leftEdge);
+	rightEdge = glm::normalize(rightEdge);
+
+	if (glm::dot(normal, rightEdge) <= glm::dot(normal, leftEdge))
+	{
+		Edge bestEdge;
+		bestEdge.max = vert;
+		bestEdge.edge = vertNext - vert;
+		bestEdge.vert1 = vert;
+		bestEdge.vert2 = vertNext;
+		return bestEdge;
+	}
+	else
+	{
+		Edge bestEdge;
+		bestEdge.max = vert;
+		bestEdge.edge = vert - vertPrev;
+		bestEdge.vert1 = vertPrev;
+		bestEdge.vert2 = vert;
+		return bestEdge;
+	}
+}
+
+void Poly::Clip(std::vector<glm::vec2> clippedPoints, const glm::vec2 & vert1, const glm::vec2 & vert2, const glm::vec2 & normal, const float overlap) const
+{
+	float dot1 = glm::dot(normal, vert1) - overlap;
+	float dot2 = glm::dot(normal, vert2) - overlap;
+
+	if (dot1 >= 0.0f)
+	{
+		clippedPoints.push_back(vert1);
+	}
+	if (dot2 >= 0.0f)
+	{
+		clippedPoints.push_back(vert2);
+	}
+
+	if (dot1 * dot2 < 0.0f)
+	{
+		glm::vec2 edge = vert2 - vert1;
+
+		float location = dot1 / (dot1 - dot2);
+		edge *= location;
+		edge += vert1;
+
+		clippedPoints.push_back(edge);
+	}
+}
+
+glm::vec2 Poly::Cross(const glm::vec2 & vect, const float scalar) const
+{
+	return glm::vec2(-1.0f * vect.y * scalar, vect.x * scalar);
 }
 
 std::vector<glm::vec2> Poly::GetAxis() const

@@ -596,7 +596,19 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
-			glm::vec2 contact = poly1->GetContact(poly2, normal, overlap);
+			std::vector<glm::vec2> contactPoints = poly1->ContactPoints(poly2, normal);
+			glm::vec2 contact = glm::vec2(0.0f, 0.0f);
+
+			if (contactPoints.size() <= 0)
+			{
+				return;
+			}
+
+			for each (glm::vec2 point in contactPoints)
+			{
+				contact += point;
+			}
+			contact /= contactPoints.size();
 
 			// applys the friction force on each object
 			ApplyFriction(poly1, -force, contact, gravity, timeStep, poly2->GetStaticFriction(), poly2->GetKineticFriction());

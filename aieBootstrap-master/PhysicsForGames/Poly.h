@@ -3,6 +3,14 @@
 #include "Rigidbody.h"
 #include <vector>
 
+struct Edge
+{
+	glm::vec2 max;
+	glm::vec2 edge;
+	glm::vec2 vert1;
+	glm::vec2 vert2;
+};
+
 class Poly : public Rigidbody
 {
 public:
@@ -24,7 +32,10 @@ public:
 	glm::vec2 Project(const glm::vec2& axis) const;
 	float GetOverlap(const glm::vec2& proj1, const glm::vec2& proj2) const;
 	bool Overlap(const glm::vec2& proj1, const glm::vec2& proj2) const;
-	glm::vec2 GetContact(const Poly* other, const glm::vec2& normal, const float overlap) const;
+	std::vector<glm::vec2> ContactPoints(const Poly* other, const glm::vec2& normal) const;
+	Edge BestEdge(const glm::vec2& normal) const;
+	void Clip(std::vector<glm::vec2> clippedPoints, const glm::vec2& vert1, const glm::vec2& vert2, const glm::vec2& normal, const float overlap) const;
+	glm::vec2 Cross(const glm::vec2& vect, const float scalar) const;
 
 	std::vector<glm::vec2> GetAxis() const;
 	std::vector<glm::vec2> GetVertices() const { return m_vertices; }
