@@ -266,11 +266,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 		if (glm::distance(clamp, sphere->GetPosition()) < sphere->GetRadius())
 		{
 			// the collision normal between the circle and the box will be perpendicular to one of the box's sides
-			glm::vec2 normal = glm::normalize(box->GetPosition() - sphere->GetPosition());
-			// sets the smaller of the two coordinates to 0
-			(fabsf(normal.x) > fabsf(normal.y)) ? normal.y = 0.0f : normal.x = 0.0f;
-			// ensures that the larger coordinate equals 1
-			normal = glm::normalize(normal);
+			glm::vec2 normal = glm::normalize(clamp - sphere->GetPosition());
 			// the difference between the velocities is the relative velocity
 			glm::vec2 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
 
@@ -297,7 +293,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 				// scales the vector between the clamped position and the circle's center by the radius
 				glm::vec2 vectorViaClamp = glm::normalize(clamp - sphere->GetPosition()) * sphere->GetRadius();
 				// the overlap amount is the distance between the clamped position and the scaled clamped position
-				overlap = glm::distance(clamp, vectorViaClamp);
+				overlap = glm::distance(clamp, vectorViaClamp + sphere->GetPosition());
 			}
 
 			// the sum of the two masses
@@ -601,7 +597,7 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 
 			if (contactPoints.size() <= 0)
 			{
-				return;
+				return false;
 			}
 
 			for each (glm::vec2 point in contactPoints)
@@ -654,7 +650,7 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 	// projects the velocity on the friction force to see if the force overcame the friction
 	frictionDirection = glm::dot(frictionForce, velocity);
 	// if the projection is negative then the force overcame the friction
-	if (frictionDirection <= 0.0f)
+	if (frictionDirection < 0.0f)
 	{
 		// applies the force only on the circle because the plane is static
 		obj->ApplyForce(force + frictionForce, contact - obj->GetPosition());
@@ -662,7 +658,7 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 	else // did not overcome friction
 	{
 		// stops the object
-		obj->SetVelocity(glm::vec2(0.0f, 0.0f));
+		//obj->SetVelocity(glm::vec2(0.0f, 0.0f));
 	}
 }
 

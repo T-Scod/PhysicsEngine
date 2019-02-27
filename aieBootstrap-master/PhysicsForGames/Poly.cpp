@@ -167,14 +167,14 @@ std::vector<glm::vec2> Poly::ContactPoints(const Poly * other, const glm::vec2 &
 	Clip(clippedPoints, inc.vert1, inc.vert2, refEdge, overlap1);
 	if (clippedPoints.size() < 2)
 	{
-		return;
+		return clippedPoints;
 	}
 
 	float overlap2 = glm::dot(refEdge, ref.vert2);
 	Clip(clippedPoints, clippedPoints[0], clippedPoints[1], -refEdge, -overlap2);
 	if (clippedPoints.size() < 2)
 	{
-		return;
+		return clippedPoints;
 	}
 
 	glm::vec2 refNorm = Cross(ref.edge, -1.0f);
