@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Rigidbody.h"
+#include <vector>
 
 class AABB : public Rigidbody
 {
@@ -24,6 +25,7 @@ public:
 	float GetHeight() const { return m_height; }
 	// returns half of the width and height
 	glm::vec2 GetExtents() const { return glm::vec2(m_width * 0.5f, m_height * 0.5f); }
+	std::vector<glm::vec2> GetCorners() const;
 
 protected:
 	// stores the width of the box

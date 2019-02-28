@@ -29,8 +29,6 @@ public:
 	virtual void Debug() = 0;
 	// draws the object
 	virtual void MakeGizmo() = 0;
-	// used to reset the position of the object
-	virtual void ResetPosition() {}
 
 	ShapeType GetShapeType() const { return m_shapeID; }
 	float GetStaticFriction() const { return m_µs; }

@@ -16,6 +16,7 @@ AABB::AABB(const glm::vec2 & position, const float inclination, const float spee
 {
 	m_width = width;
 	m_height = height;
+	m_moment = 1.0f / 12.0f * mass * width * height;
 }
 AABB::~AABB()
 {
@@ -25,4 +26,14 @@ void AABB::MakeGizmo()
 {
 	// uses gizmos to draw a box
 	aie::Gizmos::add2DAABB(m_position, GetExtents(), m_colour);
+}
+
+std::vector<glm::vec2> AABB::GetCorners() const
+{
+	std::vector<glm::vec2> corners;
+	corners.push_back(GetMin()); // bottom left
+	corners.push_back({ GetMin().x, GetMax().y }); // top left
+	corners.push_back(GetMax()); // top right
+	corners.push_back({ GetMax().x, GetMin().y }); // bottom right
+	return corners;
 }

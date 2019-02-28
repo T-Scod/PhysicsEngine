@@ -19,7 +19,6 @@ public:
 	virtual void Debug();
 	// draws the line
 	virtual void MakeGizmo();
-	virtual void ResetPosition() {}
 
 	glm::vec2 GetNormal() const { return m_normal; }
 	float GetDistance() const { return m_distanceToOrigin; }

@@ -27,38 +27,38 @@ bool CollisionApp::startup()
 	m_physicsScene->SetGravity(glm::vec2(0, -10.0f));
 	m_physicsScene->SetTimeStep(0.001f);
 
-	glm::vec2 startPos1 = glm::vec2(-10, 0);
-	glm::vec2 startPos2 = glm::vec2(15.0f, 30.0f);
-	glm::vec2 velocity = glm::vec2(0, 0);
-	glm::vec2 force1 = glm::vec2(10, 0);
+	glm::vec2 startPos1 = glm::vec2(0.0f, 30.0f);
+	glm::vec2 startPos2 = glm::vec2(15.0f, 35.0f);
+	glm::vec2 velocity = glm::vec2(0.0f, 0.0f);
+	glm::vec2 force1 = glm::vec2(10.0f, 0.0f);
 	force1 = glm::normalize(force1) * 4.0f;
-	glm::vec2 force2 = glm::vec2(-10, 0);
+	glm::vec2 force2 = glm::vec2(-10.0f, 0.0f);
 	float mass = 1.0f;
 	float mass1 = 10000.7f;
 	float mass2 = 1.6f;
-	glm::vec4 red = glm::vec4(1, 0, 0, 1);
-	glm::vec4 green = glm::vec4(0, 1, 0, 1);
+	glm::vec4 red = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 green = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
-	/*AABB* box1 = new AABB({10, 50}, velocity, 5, 5, mass, red);
-	m_physicsScene->AddActor(box1);*/
+	AABB* box1 = new AABB(startPos1, velocity, 5.0f, 5.0f, mass, red);
+	m_physicsScene->AddActor(box1);
 	//box1->ApplyForce(force1);
-	/*AABB* box2 = new AABB({ 0, 50 }, {0, -10}, 5, 5, mass1, green, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
-	m_physicsScene->AddActor(box2);*/
+	AABB* box2 = new AABB(startPos2, force2, 5.0f, 5.0f, mass, green, 0.5f);
+	m_physicsScene->AddActor(box2);
 	//box2->ApplyForce(force2);
-	Sphere* ball1 = new Sphere({15, 45}, velocity, 4, mass, red);
-	m_physicsScene->AddActor(ball1);
+	/*Sphere* ball1 = new Sphere(startPos1, velocity, 5.0f, mass, red);
+	m_physicsScene->AddActor(ball1);*/
 	//ball1->ApplyForce(force1);
-	Sphere* ball2 = new Sphere({15, 35}, velocity, 5, mass, green, 1.0f, 0.1f, 1.0f, 1.0f, 1.0f);
-	m_physicsScene->AddActor(ball2);
+	/*Sphere* ball2 = new Sphere(startPos2, force2, 5.0f, mass, green, 0.5f);
+	m_physicsScene->AddActor(ball2);*/
 	//ball2->ApplyForce(force2);
-	/*Plane* plane1 = new Plane(glm::vec2(-0.707f, 0.707f), 0.0f, red, 1, 1);
-	m_physicsScene->AddActor(plane1);*/
-	/*Plane* plane2 = new Plane(glm::vec2(0.707f, 0.707f), 10.0f);
-	m_physicsScene->AddActor(plane2);*/
-	Plane* plane3 = new Plane(glm::vec2(0, 1), 0);
-	m_physicsScene->AddActor(plane3);
-	Plane* plane4 = new Plane(0.349066f, 0.0f, red, 1.0f, 1.0f);
-	m_physicsScene->AddActor(plane4);
+	Plane* plane1 = new Plane(glm::normalize(glm::vec2(-0.707f, 0.707f)), 0.0f, red);
+	m_physicsScene->AddActor(plane1);
+	Plane* plane2 = new Plane(glm::normalize(glm::vec2(0.707f, 0.707f)), 0.0f);
+	m_physicsScene->AddActor(plane2);
+	/*Plane* plane3 = new Plane(glm::vec2(0, 1), 0);
+	m_physicsScene->AddActor(plane3);*/
+	/*Plane* plane4 = new Plane(0.349066f, 0.0f, red, 1.0f, 1.0f);
+	m_physicsScene->AddActor(plane4);*/
 
 	return true;
 }
