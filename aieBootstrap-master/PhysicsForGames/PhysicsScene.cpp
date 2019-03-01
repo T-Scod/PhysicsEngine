@@ -288,15 +288,23 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 		// if the distance between the closest point and the circle's is less than the circle's radius then a collision occured
 		if (glm::distance(clamp, sphere->GetPosition()) < sphere->GetRadius())
 		{
-			// the collision normal between the circle and the box will be perpendicular to one of the box's sides
-			glm::vec2 normal = glm::normalize(clamp - sphere->GetPosition());
+			glm::vec2 normal;
 			// the difference between the velocities is the relative velocity
 			glm::vec2 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
+			if (clamp == sphere->GetPosition())
+			{
+
+			}
+			else
+			{
+				// the collision normal between the circle and the box will be perpendicular to one of the box's sides
+				normal = glm::normalize(clamp - sphere->GetPosition());
+			}
 
 			// the amount the circle and box overlap
 			float overlap = 0.0f;
 			// checks if the circle's position is inside the box
-			if (clamp == sphere->GetPosition())
+			if (glm::distance(clamp, sphere->GetPosition()) < 0.01f)
 			{
 				// checks if the collision normal is horizontal
 				if (normal.x != 0)
@@ -314,7 +322,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			else // circle's center is not in the box
 			{
 				// scales the vector between the clamped position and the circle's center by the radius
-				glm::vec2 vectorViaClamp = glm::normalize(clamp - sphere->GetPosition()) * sphere->GetRadius();
+				glm::vec2 vectorViaClamp = normal * sphere->GetRadius();
 				// the overlap amount is the distance between the clamped position and the scaled clamped position
 				overlap = glm::distance(clamp, vectorViaClamp + sphere->GetPosition());
 			}
@@ -380,31 +388,21 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 	// if successful then test for collision
 	if (plane != nullptr && box != nullptr)
 	{
-		// contains the position of the corner and if it intersects the plane
-		struct Corner
-		{
-			glm::vec2 position;
-			bool intersect;
-		};
-		// collection of the corners
-		Corner corners[4];
-		corners[0] = { box->GetMin(), false };									// bottom left
-		corners[1] = {	glm::vec2(box->GetMin().x, box->GetMax().y), false };	// top left
-		corners[2] = { box->GetMax(), false };									// top right
-		corners[3] = {	glm::vec2(box->GetMax().x, box->GetMin().y), false };	// bottom right
+		std::vector<glm::vec2> corners = box->GetCorners();
+		bool intersections[4] = { false };
 
 		for (unsigned int i = 0; i < 4; i++)
 		{
 			// checks if the corner is behind the plane
-			if (glm::dot(plane->GetNormal(), corners[i].position) - plane->GetDistance() <= 0)
+			if (glm::dot(plane->GetNormal(), corners[i]) - plane->GetDistance() <= 0)
 			{
 				// this corner intersects with the plane
-				corners[i].intersect = true;
+				intersections[i] = true;
 			}
 		}
 
 		// if any of the corners intersect with the plane then a collision occured
-		if (corners[0].intersect || corners[1].intersect || corners[2].intersect || corners[3].intersect)
+		if (intersections[0] || intersections[1] || intersections[2] || intersections[3])
 		{
 			// uses the plane's normal as the collision normal
 			glm::vec2 normal = plane->GetNormal();
@@ -418,10 +416,10 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			for (int i = 0; i < 4; i++)
 			{
 				// checks if the corner is behind the plane
-				if (corners[i].intersect)
+				if (intersections[i])
 				{
 					// gets the corner's distance from the plane
-					float distance = glm::dot(corners[i].position, normal) - plane->GetDistance();
+					float distance = glm::dot(corners[i], normal) - plane->GetDistance();
 					// checks if the distance is greater the currently stored overlap amount
 					if (fabsf(overlap) < fabsf(distance))
 					{
@@ -492,7 +490,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			glm::vec2 relativeVelocity = box2->GetVelocity() - box1->GetVelocity();
 
 			float min1 = std::numeric_limits<float>::max();
-			float max1 = -std::numeric_limits<float>::max();
+			float max1 = std::numeric_limits<float>::lowest();
 			std::vector<glm::vec2> corners = box1->GetCorners();
 			for each (glm::vec2 corner in corners)
 			{
@@ -507,7 +505,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 				}
 			}
 			float min2 = std::numeric_limits<float>::max();
-			float max2 = -std::numeric_limits<float>::max();
+			float max2 = std::numeric_limits<float>::lowest();
 			corners = box2->GetCorners();
 			for each (glm::vec2 corner in corners)
 			{

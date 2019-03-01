@@ -31,9 +31,9 @@ void AABB::MakeGizmo()
 std::vector<glm::vec2> AABB::GetCorners() const
 {
 	std::vector<glm::vec2> corners;
-	corners.push_back(GetMin()); // bottom left
-	corners.push_back({ GetMin().x, GetMax().y }); // top left
-	corners.push_back(GetMax()); // top right
-	corners.push_back({ GetMax().x, GetMin().y }); // bottom right
+	corners.push_back(GetMin());					// bottom left
+	corners.push_back({ GetMin().x, GetMax().y });	// top left
+	corners.push_back(GetMax());					// top right
+	corners.push_back({ GetMax().x, GetMin().y });	// bottom right
 	return corners;
 }

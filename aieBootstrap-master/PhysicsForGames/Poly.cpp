@@ -199,7 +199,7 @@ std::vector<glm::vec2> Poly::ContactPoints(const Poly * other, const glm::vec2 &
 
 Edge Poly::BestEdge(const glm::vec2 & normal) const
 {
-	float max = -std::numeric_limits<float>::max();
+	float max = std::numeric_limits<float>::lowest();
 	unsigned int index = 0;
 	for (int i = 0; i < m_vertices.size(); i++)
 	{
