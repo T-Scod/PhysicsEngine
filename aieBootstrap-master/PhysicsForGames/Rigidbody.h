@@ -5,8 +5,8 @@
 class Rigidbody : public PhysicsObject
 {
 public:
-	Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float mass,
-		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float elasticity = 1.0f,
+	Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float angularVelocity, const float mass,
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool isKinematic = false, const float elasticity = 1.0f,
 		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float µs = 0.0f, const float µk = 0.0f);
 	~Rigidbody();
 
@@ -22,21 +22,24 @@ public:
 	void SetVelocity(const glm::vec2& velocity);
 	glm::vec2 GetVelocity() const { return m_velocity; }
 		
+	void SetRotation(const float rotation);
 	float GetRotation() const { return m_rotation; }
+	void SetAngularVelocity(const float angularVelocity);
 	float GetAngularVelocity() const { return m_angularVelocity; }
 	float GetMoment() const { return m_moment; }
 	
+	// use for when mass is lost, i.e. when a rocket uses up fuel
+	void SetMass(const float mass);
 	float GetMass() const { return m_mass; }
 	float GetElasticity() const { return m_elasticity; }
 
+	void SetLinearDrag(const float linearDrag);
 	float GetLinearDrag() const { return m_linearDrag; }
+	void SetAngularDrag(const float angularDrag);
 	float GetAngularDrag() const { return m_angularDrag; }
 
-	//// use for when mass is lost, i.e. when a rocket uses up fuel
-	//void SetMass(const float mass);
-
 protected:
-	// stores the location
+	// stores the object's location
 	glm::vec2 m_position;
 	// stores the directional speed
 	glm::vec2 m_velocity;

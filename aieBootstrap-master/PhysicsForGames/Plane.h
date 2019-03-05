@@ -6,9 +6,9 @@
 class Plane : public PhysicsObject
 {
 public:
-	// given values for initialisation
 	Plane(const glm::vec2& normal, const float distance,
 		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float 탎 = 0.0f, const float 탃 = 0.0f);
+	// determines the normal using an incline (in radians)
 	Plane(const float inclination, const float distance,
 		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~Plane();

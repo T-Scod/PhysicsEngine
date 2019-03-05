@@ -2,15 +2,15 @@
 #include <iostream>
 
 Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour, const float 탎, const float 탃) :
-	PhysicsObject(PLANE, colour, 탎, 탃)
+	PhysicsObject(PLANE, colour, false, 탎, 탃)
 {
 	m_normal = normal;
 	m_distanceToOrigin = distance;
 }
 Plane::Plane(const float inclination, const float distance, const glm::vec4 & colour, const float 탎, const float 탃) :
-	PhysicsObject(PLANE, colour, 탎, 탃)
+	PhysicsObject(PLANE, colour, false, 탎, 탃)
 {
-	m_normal = glm::normalize(glm::vec2(-sinf(inclination), cosf(inclination)));
+	m_normal = glm::vec2(-sinf(inclination), cosf(inclination));
 	m_distanceToOrigin = distance;
 }
 Plane::~Plane()
@@ -22,6 +22,8 @@ void Plane::Debug()
 	std::cout << "Shape ID: " << m_shapeID << std::endl;
 	std::cout << "Normal: " << m_normal.x << ", " << m_normal.y << std::endl;
 	std::cout << "Distance: " << m_distanceToOrigin << std::endl;
+	std::cout << "Static Friction: " << m_탎 << std::endl;
+	std::cout << "Kinetic Friction: " << m_탃 << std::endl;
 }
 
 void Plane::MakeGizmo()
