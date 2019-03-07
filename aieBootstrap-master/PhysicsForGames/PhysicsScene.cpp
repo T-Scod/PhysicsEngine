@@ -859,13 +859,21 @@ bool PhysicsScene::Poly2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const 
 	// if successful then test for collision
 	if (poly != nullptr && plane != nullptr)
 	{
+		// use the normal of the plane as the collision normal
 		glm::vec2 normal = plane->GetNormal();
+		// does a broad check to see if it's worth checking the poly properly
 		if (poly->GetRadius() - (glm::dot(poly->GetPosition(), normal) - plane->GetDistance()) >= 0.0f)
 		{
+			// projects the poly onto the normal
 			glm::vec2 projection = poly->Project(normal);
+			// checks if the minimum projection is behind the plane
 			float overlap = projection.x - plane->GetDistance();
 			if (overlap <= 0.0f)
 			{
+				overlap = -overlap;
+
+				// if the either object is kinematic then there is no collision resolution
+				// if the poly is static then there is no collision resolution because both objects will not move
 				if (poly->GetKinematic() || plane->GetKinematic() || poly->GetStatic())
 				{
 					return true;
@@ -895,6 +903,7 @@ bool PhysicsScene::Poly2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const 
 				glm::vec2 force = normal * j;
 				glm::vec2 contact = glm::vec2(0.0f, 0.0f);
 
+				// finds the point that was moveed to the edge of the plane
 				for (glm::vec2 vertex : poly->GetVertices())
 				{
 					if (glm::dot(vertex + poly->GetPosition(), normal) - plane->GetDistance() == 0.0f)
@@ -1143,14 +1152,18 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 		frictionForce *= (obj->GetKineticFriction() + µk) / 2.0f;
 	}
 
-	// adds the friction force to the velocity after the collision
-	velocity += frictionForce;
-	// projects the velocity on the friction force to see if the force overcame the friction
-	frictionDirection = glm::dot(frictionForce, velocity);
-	// if the projection is negative then the force overcame the friction
-	if (frictionDirection <= 0.0f)
+	//// adds the friction force to the velocity after the collision
+	//velocity += frictionForce;
+	//// projects the velocity on the friction force to see if the force overcame the friction
+	//frictionDirection = glm::dot(frictionForce, velocity);
+	//// if the projection is negative then the force overcame the friction
+	//if (frictionDirection <= 0.0f)
+	//{
+	//	obj->ApplyForce(force + frictionForce, contact - obj->GetPosition());
+	//}
+	// checks if the magnitude of the friction force is less than or equal to the magnitude of the velocity
+	if (glm::length(frictionForce) <= glm::length(velocity))
 	{
-		// applies the force only on the circle because the plane is static
 		obj->ApplyForce(force + frictionForce, contact - obj->GetPosition());
 	}
 	else // did not overcome friction
