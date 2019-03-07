@@ -5,8 +5,9 @@
 #define MIN_ROTATION_THRESHOLD 0.00001f
 
 Rigidbody::Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float angularVelocity, const float mass,
-	const glm::vec4& colour, const bool isKinematic, const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
-	PhysicsObject(shapeID, colour, isKinematic, 탎, 탃) // passes the shapeID to the physics object constructor
+	const glm::vec4& colour, const bool kinematic, const bool staticRigidbody,
+	const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
+	PhysicsObject(shapeID, colour, kinematic, 탎, 탃) // passes the shapeID to the physics object constructor
 {
 	m_position = position;
 	m_velocity = velocity;
@@ -16,6 +17,7 @@ Rigidbody::Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const 
 	m_elasticity = elasticity;
 	m_linearDrag = linearDrag;
 	m_angularDrag = angularDrag;
+	m_staticRigidbody = staticRigidbody;
 }
 Rigidbody::~Rigidbody()
 {
@@ -23,6 +25,11 @@ Rigidbody::~Rigidbody()
 
 void Rigidbody::FixedUpdate(const glm::vec2& gravity, const float timeStep)
 {
+	if (m_kinematic || m_staticRigidbody)
+	{
+		return;
+	}
+
 	// applies the force due to gravity
 	m_velocity += gravity * timeStep;
 	// moves the object based on the displacement created by the velocity
@@ -57,11 +64,16 @@ void Rigidbody::Debug()
 	//std::cout << "Elasticity: " << m_elasticity << std::endl;
 	//std::cout << "Linear Drag: " << m_linearDrag << std::endl;
 	//std::cout << "Angular Drag: " << m_angularDrag << std::endl;
-	//std::cout << "Kinematic: " << m_isKinematic << std::endl;
+	//std::cout << "Kinematic: " << m_kinematic << std::endl;
 }
 
 void Rigidbody::ApplyForce(const glm::vec2& force, const glm::vec2& pos)
 {
+	if (m_kinematic || m_staticRigidbody)
+	{
+		return;
+	}
+
 	// adds the instantaneous acceleration to the current velocity
 	m_velocity += force / m_mass;
 	// adds the instantaneous acceleration to the angular velocity based on the position where the force is applied
@@ -98,4 +110,9 @@ void Rigidbody::SetLinearDrag(const float linearDrag)
 void Rigidbody::SetAngularDrag(const float angularDrag)
 {
 	m_angularDrag = angularDrag;
+}
+
+void Rigidbody::SetStatic(const bool staticRigidbody)
+{
+	m_staticRigidbody = staticRigidbody;
 }

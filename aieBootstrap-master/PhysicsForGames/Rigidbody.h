@@ -6,8 +6,8 @@ class Rigidbody : public PhysicsObject
 {
 public:
 	Rigidbody(const ShapeType& shapeID, const glm::vec2& position, const glm::vec2& velocity, const float rotation, const float angularVelocity, const float mass,
-		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~Rigidbody();
 
 	// updates with a fixed time step
@@ -38,6 +38,9 @@ public:
 	void SetAngularDrag(const float angularDrag);
 	float GetAngularDrag() const { return m_angularDrag; }
 
+	void SetStatic(const bool staticRigidbody);
+	bool GetStatic() const { return m_staticRigidbody; }
+
 protected:
 	// stores the object's location
 	glm::vec2 m_position;
@@ -56,4 +59,6 @@ protected:
 	// scalar values that reduces velocity each frame due to "air resistance"
 	float m_linearDrag;
 	float m_angularDrag;
+	// determines if the object is static
+	bool m_staticRigidbody;
 };

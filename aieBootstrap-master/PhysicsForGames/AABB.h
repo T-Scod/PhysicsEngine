@@ -7,12 +7,12 @@ class AABB : public Rigidbody
 {
 public:
 	AABB(const glm::vec2& position, const glm::vec2& velocity, const float width, const float height, const float mass,
-		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	// determines the velocity of the object using an incline (in radians) and a scalar (the speed)
 	AABB(const glm::vec2& position, const float inclination, const float speed, const float width, const float height, const float mass,
-		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~AABB();
 
 	// draws the box

@@ -1,14 +1,14 @@
 #include "Plane.h"
 #include <iostream>
 
-Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour, const float 탎, const float 탃) :
-	PhysicsObject(PLANE, colour, false, 탎, 탃)
+Plane::Plane(const glm::vec2 & normal, const float distance, const glm::vec4& colour, const bool kinematic, const float 탎, const float 탃) :
+	PhysicsObject(PLANE, colour, kinematic, 탎, 탃)
 {
 	m_normal = normal;
 	m_distanceToOrigin = distance;
 }
-Plane::Plane(const float inclination, const float distance, const glm::vec4 & colour, const float 탎, const float 탃) :
-	PhysicsObject(PLANE, colour, false, 탎, 탃)
+Plane::Plane(const float inclination, const float distance, const glm::vec4 & colour, const bool kinematic, const float 탎, const float 탃) :
+	PhysicsObject(PLANE, colour, kinematic, 탎, 탃)
 {
 	m_normal = glm::vec2(-sinf(inclination), cosf(inclination));
 	m_distanceToOrigin = distance;

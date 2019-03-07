@@ -173,8 +173,9 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, cons
 		// if the overlap amount is positive then a collision occured
 		if (overlap >= 0)
 		{
-			// if the circle is kinematic then there is no collision resolution
-			if (sphere->GetKinematic())
+			// if either object is kinematic then there is no collision resolution
+			// if the circle is static then there is no collision resolution because both objects will not move
+			if (sphere->GetKinematic() || plane->GetKinematic() || sphere->GetStatic())
 			{
 				return true;
 			}
@@ -231,7 +232,8 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, con
 		if (distance <= radii)
 		{
 			// if either object is kinematic then there is no collision resolution
-			if (sphere1->GetKinematic() || sphere2->GetKinematic())
+			// if both objects are static then there will be no collision resolution because neither object will move
+			if (sphere1->GetKinematic() || sphere2->GetKinematic() || (sphere1->GetStatic() && sphere2->GetStatic()))
 			{
 				return true;
 			}
@@ -252,40 +254,88 @@ bool PhysicsScene::Sphere2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, con
 			float overlap1 = overlap * (p2 / momentum);
 			float overlap2 = overlap * (p1 / momentum);
 
-			// sphere to sphere restitution
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(sphere1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
-			{
-				ApplyResitiution(sphere1, sphere1->GetVelocity() + (gravity * timeStep), -normal, overlap1);
-			}
-			else
-			{
-				ApplyResitiution(sphere1, -(sphere1->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
-			}
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(sphere2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
-			{
-				ApplyResitiution(sphere2, sphere2->GetVelocity() + (gravity * timeStep), normal, overlap2);
-			}
-			else
-			{
-				ApplyResitiution(sphere2, -(sphere2->GetVelocity() + (gravity * timeStep)), normal, overlap2);
-			}
-
 			// uses the average elasticity of the two circles
-			float elasticity = (sphere1->GetElasticity() + sphere2->GetElasticity()) / 2.0f;
+			float elasticity;
 			// "j" is the magnitude of the force vector that needs to be applied to the objects
-			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
-			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / sphere1->GetMass()) + (1 / sphere2->GetMass())));
+			float j;
+
+			// sphere to sphere restitution
+			// checks if both objects are not static
+			if (!sphere1->GetStatic() && !sphere2->GetStatic())
+			{
+				// determines which direction of velocity is away from the other object
+				if (glm::dot(sphere1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(sphere1, sphere1->GetVelocity() + (gravity * timeStep), -normal, overlap1);
+				}
+				else
+				{
+					ApplyResitiution(sphere1, -(sphere1->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
+				}
+				if (glm::dot(sphere2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(sphere2, sphere2->GetVelocity() + (gravity * timeStep), normal, overlap2);
+				}
+				else
+				{
+					ApplyResitiution(sphere2, -(sphere2->GetVelocity() + (gravity * timeStep)), normal, overlap2);
+				}
+
+				elasticity = (sphere1->GetElasticity() + sphere2->GetElasticity()) / 2.0f;
+				// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / sphere1->GetMass()) + (1 / sphere2->GetMass())));
+			}
+			// checks if only sphere1 is not static
+			else if (!sphere1->GetStatic() && sphere2->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(sphere1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(sphere1, sphere1->GetVelocity() + (gravity * timeStep), -normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(sphere1, -(sphere1->GetVelocity() + (gravity * timeStep)), -normal, overlap);
+				}
+
+				// uses the elasticity of sphere1
+				elasticity = sphere1->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because sphere2 has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / sphere1->GetMass()));
+			}
+			// checks if only sphere 2 is not static
+			else if (sphere1->GetStatic() && !sphere2->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(sphere2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(sphere2, sphere2->GetVelocity() + (gravity * timeStep), normal, overlap1);
+				}
+				else
+				{
+					ApplyResitiution(sphere2, -(sphere2->GetVelocity() + (gravity * timeStep)), normal, overlap1);
+				}
+
+				// uses the elasticity of sphere2
+				elasticity = sphere2->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because sphere1 has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / sphere2->GetMass()));
+			}
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
 			glm::vec2 contact = 0.5f * (sphere1->GetPosition() + sphere2->GetPosition());
 
-			// applys the friction force on each object
-			ApplyFriction(sphere1, -force, contact, gravity, timeStep, sphere2->GetStaticFriction(), sphere2->GetKineticFriction());
-			ApplyFriction(sphere2, force, contact, gravity, timeStep, sphere1->GetStaticFriction(), sphere1->GetKineticFriction());
+			// applys the friction force on each object if they are not static
+			if (!sphere1->GetStatic())
+			{
+				ApplyFriction(sphere1, -force, contact, gravity, timeStep, sphere2->GetStaticFriction(), sphere2->GetKineticFriction());
+			}
+			if (!sphere2->GetStatic())
+			{
+				ApplyFriction(sphere2, force, contact, gravity, timeStep, sphere1->GetStaticFriction(), sphere1->GetKineticFriction());
+			}
 
 			return true;
 		}
@@ -307,13 +357,14 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 		if (glm::distance(clamp, sphere->GetPosition()) < sphere->GetRadius())
 		{
 			// if either object is kinematic then there is no collision resolution
-			if (sphere->GetKinematic() || box->GetKinematic())
+			// if both objects are static then there will be no collision resolution because neither object will move
+			if (sphere->GetKinematic() || box->GetKinematic() || (sphere->GetStatic() && box->GetStatic()))
 			{
 				return true;
 			}
 
 			// the difference between the velocities is the relative velocity
-			glm::vec2 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
+			glm::vec2 relativeVelocity = sphere->GetVelocity() - box->GetVelocity();
 			// the collision normal
 			glm::vec2 normal = glm::vec2(0.0f, 0.0f);
 
@@ -322,7 +373,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			// stores the corner closest to the circle
 			glm::vec2 closestCorner = normal;
 			// checks if the circle hit the corner of the box
-			for each (glm::vec2 corner in corners)
+			for (glm::vec2 corner : corners)
 			{
 				// vector between the corner and the box
 				glm::vec2 v1 = glm::normalize(corner - box->GetPosition());
@@ -340,7 +391,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			if (normal == glm::vec2(0.0f, 0.0f))
 			{
 				// the collision normal between the circle and the box will be perpendicular to one of the box's sides
-				normal = glm::normalize(box->GetPosition() - sphere->GetPosition());
+				normal = glm::normalize(sphere->GetPosition() - box->GetPosition());
 				// sets the smaller of the two coordinates to 0
 				(fabsf(normal.x) > fabsf(normal.y)) ? normal.y = 0.0f : normal.x = 0.0f;
 				// ensures that the larger coordinate equals 1
@@ -390,38 +441,86 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			float overlap1 = overlap * (p2 / momentum);
 			float overlap2 = overlap * (p1 / momentum);
 
-			// box to sphere restitution
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
-			{
-				ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), -normal, overlap1);
-			}
-			else
-			{
-				ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
-			}
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(box->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
-			{
-				ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), normal, overlap2);
-			}
-			else
-			{
-				ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), normal, overlap2);
-			}
-
 			// uses the average elasticity of the two objects
-			float elasticity = (box->GetElasticity() + sphere->GetElasticity()) / 2.0f;
+			float elasticity;
 			// "j" is the magnitude of the force vector that needs to be applied to the objects
-			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
-			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / box->GetMass()) + (1 / sphere->GetMass())));
+			float j;
+
+			// box to sphere restitution
+			// checks if both objects are not static
+			if (!sphere->GetStatic() && !box->GetStatic())
+			{
+				// determines which direction of velocity is away from the other object
+				if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), -normal, overlap1);
+				}
+				else
+				{
+					ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
+				}
+				if (glm::dot(box->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), normal, overlap2);
+				}
+				else
+				{
+					ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), normal, overlap2);
+				}
+
+				elasticity = (box->GetElasticity() + sphere->GetElasticity()) / 2.0f;
+				// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / box->GetMass()) + (1 / sphere->GetMass())));
+			}
+			// checks if only the sphere is not static
+			else if (!sphere->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), -normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), -normal, overlap);
+				}
+
+				// uses the elasticity of the sphere
+				elasticity = sphere->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because the box has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / sphere->GetMass()));
+			}
+			// checks if only the box is not static
+			else if (!box->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(box->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), normal, overlap);
+				}
+
+				// uses the elasticity of the box
+				elasticity = box->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because the sphere has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / box->GetMass()));
+			}
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 
-			// applys the friction force on each object
-			ApplyFriction(sphere, -force, clamp, gravity, timeStep, box->GetStaticFriction(), box->GetKineticFriction());
-			ApplyFriction(box, force, clamp, gravity, timeStep, sphere->GetStaticFriction(), sphere->GetKineticFriction());
+			// applys the friction force on each object if the object is not static
+			if (!sphere->GetStatic())
+			{
+				ApplyFriction(sphere, -force, clamp, gravity, timeStep, box->GetStaticFriction(), box->GetKineticFriction());
+			}
+			if (!box->GetStatic())
+			{
+				ApplyFriction(box, force, clamp, gravity, timeStep, sphere->GetStaticFriction(), sphere->GetKineticFriction());
+			}
 
 			return true;
 		}
@@ -463,8 +562,9 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 		// if any of the corners intersect with the plane then a collision occured
 		if (intersections[0] || intersections[1] || intersections[2] || intersections[3])
 		{
-			// if the box is kinematic then there is no collision resolution
-			if (box->GetKinematic())
+			// if the either object is kinematic then there is no collision resolution
+			// if the box is static then there is no collision resolution because both objects will not move
+			if (box->GetKinematic() || plane->GetKinematic() || box->GetStatic())
 			{
 				return true;
 			}
@@ -549,7 +649,8 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 		else // collision occured
 		{
 			// if either object is kinematic then there is no collision resolution
-			if (box1->GetKinematic() || box2->GetKinematic())
+			// if both objects are static then there will be no collision resolution because neither object will move
+			if (box1->GetKinematic() || box2->GetKinematic() || (box1->GetStatic() && box2->GetStatic()))
 			{
 				return true;
 			}
@@ -596,7 +697,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			float max1 = std::numeric_limits<float>::lowest();
 			// the corners of box1
 			std::vector<glm::vec2> corners = box1->GetCorners();
-			for each (glm::vec2 corner in corners)
+			for (glm::vec2 corner : corners)
 			{
 				// projects the corner onto the normal
 				float dot = glm::dot(corner, normal);
@@ -616,7 +717,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			float max2 = std::numeric_limits<float>::lowest();
 			// the corners of box2
 			corners = box2->GetCorners();
-			for each (glm::vec2 corner in corners)
+			for (glm::vec2 corner : corners)
 			{
 				// projects the corner onto the normal
 				float dot = glm::dot(corner, normal);
@@ -652,40 +753,89 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			float overlap1 = overlap * (p2 / momentum);
 			float overlap2 = overlap * (p1 / momentum);
 
-			// box to box restitution
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(box1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
-			{
-				ApplyResitiution(box1, box1->GetVelocity() + (gravity * timeStep), -normal, overlap1);
-			}
-			else
-			{
-				ApplyResitiution(box1, -(box1->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
-			}
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(box2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
-			{
-				ApplyResitiution(box2, box2->GetVelocity() + (gravity * timeStep), normal, overlap2);
-			}
-			else
-			{
-				ApplyResitiution(box2, -(box2->GetVelocity() + (gravity * timeStep)), normal, overlap2);
-			}
-
 			// uses the average elasticity of the two objects
-			float elasticity = (box1->GetElasticity() + box2->GetElasticity()) / 2.0f;;
+			float elasticity;
 			// "j" is the magnitude of the force vector that needs to be applied to the objects
-			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
-			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / box1->GetMass()) + (1 / box2->GetMass())));
+			float j;
+
+			// box to box restitution
+			// checks if both objects are not static
+			if (!box1->GetStatic() && !box2->GetStatic())
+			{
+				// determines which direction of velocity is away from the other object
+				if (glm::dot(box1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(box1, box1->GetVelocity() + (gravity * timeStep), -normal, overlap1);
+				}
+				else
+				{
+					ApplyResitiution(box1, -(box1->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
+				}
+				if (glm::dot(box2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(box2, box2->GetVelocity() + (gravity * timeStep), normal, overlap2);
+				}
+				else
+				{
+					ApplyResitiution(box2, -(box2->GetVelocity() + (gravity * timeStep)), normal, overlap2);
+				}
+
+				// uses the average elasticity of the two objects
+				elasticity = (box1->GetElasticity() + box2->GetElasticity()) / 2.0f;
+				// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / box1->GetMass()) + (1 / box2->GetMass())));
+			}
+			// checks if only box1 is not static
+			else if (!box1->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(box1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(box1, box1->GetVelocity() + (gravity * timeStep), -normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(box1, -(box1->GetVelocity() + (gravity * timeStep)), -normal, overlap);
+				}
+
+				// uses the elasticity of box1
+				elasticity = box1->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because box2 has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / box1->GetMass()));
+			}
+			// checks if only box2 is not static
+			else if (!box2->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(box2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(box2, box2->GetVelocity() + (gravity * timeStep), normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(box2, -(box2->GetVelocity() + (gravity * timeStep)), normal, overlap);
+				}
+
+				// uses the elasticity of box2
+				elasticity = box2->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because box1 has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / box2->GetMass()));
+			}
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
 			// the contact point is the point furthest away from box1 in the direction of box2
 			glm::vec2 contact = box1->GetPosition() - (normal * overlap);
 
-			// applys the friction force on each object
-			ApplyFriction(box1, -force, contact, gravity, timeStep, box2->GetStaticFriction(), box2->GetKineticFriction());
-			ApplyFriction(box2, force, contact, gravity, timeStep, box1->GetStaticFriction(), box1->GetKineticFriction());
+			// applys the friction force on each object if the object is not static
+			if (!box1->GetStatic())
+			{
+				ApplyFriction(box1, -force, contact, gravity, timeStep, box2->GetStaticFriction(), box2->GetKineticFriction());
+			}
+			if (!box2->GetStatic())
+			{
+				ApplyFriction(box2, force, contact, gravity, timeStep, box1->GetStaticFriction(), box1->GetKineticFriction());
+			}
 
 			return true;
 		}
@@ -733,7 +883,7 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			std::vector<glm::vec2> axis1 = poly1->GetAxis();
 			std::vector<glm::vec2> axis2 = poly2->GetAxis();
 			
-			for each (glm::vec2 axis in axis1)
+			for (glm::vec2 axis : axis1)
 			{
 				// projects both objects onto the axis
 				glm::vec2 proj1 = poly1->Project(axis);
@@ -758,7 +908,7 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 				}
 			}
 
-			for each (glm::vec2 axis in axis2)
+			for (glm::vec2 axis : axis2)
 			{
 				// projects both objects onto the axis
 				glm::vec2 proj1 = poly1->Project(axis);
@@ -784,7 +934,8 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			}
 
 			// if either object is kinematic then there is no collision resolution
-			if (poly1->GetKinematic() || poly2->GetKinematic())
+			// if both objects are static then there will be no collision resolution because neither object will move
+			if (poly1->GetKinematic() || poly2->GetKinematic() || (poly1->GetStatic() && poly2->GetStatic()))
 			{
 				return true;
 			}
@@ -799,31 +950,73 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			float overlap1 = overlap * (p2 / momentum);
 			float overlap2 = overlap * (p1 / momentum);
 
-			// box to box restitution
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(poly1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
-			{
-				ApplyResitiution(poly1, poly1->GetVelocity() + (gravity * timeStep), -normal, overlap1);
-			}
-			else
-			{
-				ApplyResitiution(poly1, -(poly1->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
-			}
-			// determines which direction of velocity is away from the other object
-			if (glm::dot(poly2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
-			{
-				ApplyResitiution(poly2, poly2->GetVelocity() + (gravity * timeStep), normal, overlap2);
-			}
-			else
-			{
-				ApplyResitiution(poly2, -(poly2->GetVelocity() + (gravity * timeStep)), normal, overlap2);
-			}
-
 			// uses the average elasticity of the two objects
-			float elasticity = (poly1->GetElasticity() + poly2->GetElasticity()) / 2.0f;;
+			float elasticity;
 			// "j" is the magnitude of the force vector that needs to be applied to the objects
-			// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
-			float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / poly1->GetMass()) + (1 / poly2->GetMass())));
+			float j;
+
+			// box to box restitution
+			// checks if both objects are not static
+			if (!poly1->GetStatic() && !poly2->GetStatic())
+			{
+				// determines which direction of velocity is away from the other object
+				if (glm::dot(poly1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(poly1, poly1->GetVelocity() + (gravity * timeStep), -normal, overlap1);
+				}
+				else
+				{
+					ApplyResitiution(poly1, -(poly1->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
+				}
+				if (glm::dot(poly2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(poly2, poly2->GetVelocity() + (gravity * timeStep), normal, overlap2);
+				}
+				else
+				{
+					ApplyResitiution(poly2, -(poly2->GetVelocity() + (gravity * timeStep)), normal, overlap2);
+				}
+
+				elasticity = (poly1->GetElasticity() + poly2->GetElasticity()) / 2.0f;
+				// the formula is: (j = (-(1 + e)v.rel)·n) / n·(n((1 / m.1) + (1 / m.2)))
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / poly1->GetMass()) + (1 / poly2->GetMass())));
+			}
+			// checks if only poly1 is not static
+			if (!poly1->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(poly1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				{
+					ApplyResitiution(poly1, poly1->GetVelocity() + (gravity * timeStep), -normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(poly1, -(poly1->GetVelocity() + (gravity * timeStep)), -normal, overlap);
+				}
+
+				// uses the elasticity of poly1
+				elasticity = poly1->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because poly2 has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / poly1->GetMass()));
+			}
+			// checks if only poly2 is not static
+			if (!poly2->GetStatic())
+			{
+				// gives the object the full overlap amount because the other object is static
+				if (glm::dot(poly2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(poly2, poly2->GetVelocity() + (gravity * timeStep), normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(poly2, -(poly2->GetVelocity() + (gravity * timeStep)), normal, overlap);
+				}
+
+				// uses the elasticity of poly2
+				elasticity = poly2->GetElasticity();
+				// the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m), because poly1 has infinite mass when static
+				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / poly2->GetMass()));
+			}
 
 			// scales the normal by the impulse magnitude to get the resolution force
 			glm::vec2 force = normal * j;
@@ -844,9 +1037,17 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			}
 			contact /= contactPoints.size();
 
-			// applys the friction force on each object
-			ApplyFriction(poly1, -force, contact, gravity, timeStep, poly2->GetStaticFriction(), poly2->GetKineticFriction());
-			ApplyFriction(poly2, force, contact, gravity, timeStep, poly1->GetStaticFriction(), poly1->GetKineticFriction());
+			// applys the friction force on each object if the object is not static
+			if (!poly1->GetStatic())
+			{
+				ApplyFriction(poly1, -force, contact, gravity, timeStep, poly2->GetStaticFriction(), poly2->GetKineticFriction());
+			}
+			if (!poly2->GetStatic())
+			{
+				ApplyFriction(poly2, force, contact, gravity, timeStep, poly1->GetStaticFriction(), poly1->GetKineticFriction());
+			}
+
+			return true;
 		}
 	}
 

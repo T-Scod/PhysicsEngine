@@ -3,9 +3,10 @@
 #include "Font.h"
 #include "Input.h"
 #include <iostream>
-#include "AABB.h"
-#include "Sphere.h"
 #include "Plane.h"
+#include "Sphere.h"
+#include "AABB.h"
+#include "Poly.h"
 
 CollisionApp::CollisionApp()
 {
@@ -39,10 +40,10 @@ bool CollisionApp::startup()
 	glm::vec4 red = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec4 green = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
-	AABB* box1 = new AABB(startPos1, velocity, 5.0f, 5.0f, mass, red);
+	AABB* box1 = new AABB(startPos1, velocity, 5.0f, 5.0f, mass, red, false, true);
 	m_physicsScene->AddActor(box1);
 	//box1->ApplyForce(force1);
-	AABB* box2 = new AABB(startPos2, force2, 5.0f, 5.0f, mass, green, false, 0.5f);
+	AABB* box2 = new AABB(startPos2, force2, 5.0f, 5.0f, mass, green, false, false);
 	m_physicsScene->AddActor(box2);
 	//box2->ApplyForce(force2);
 	/*Sphere* ball1 = new Sphere(startPos1, velocity, 5.0f, mass, red);
@@ -51,7 +52,7 @@ bool CollisionApp::startup()
 	/*Sphere* ball2 = new Sphere(startPos2, force2, 5.0f, mass, green, 0.5f);
 	m_physicsScene->AddActor(ball2);*/
 	//ball2->ApplyForce(force2);
-	Plane* plane1 = new Plane(glm::normalize(glm::vec2(-0.707f, 0.707f)), 0.0f, red, 1.0f, 1.0f);
+	Plane* plane1 = new Plane(glm::normalize(glm::vec2(-0.707f, 0.707f)), 0.0f, red, false, 1.0f, 1.0f);
 	m_physicsScene->AddActor(plane1);
 	Plane* plane2 = new Plane(glm::normalize(glm::vec2(0.707f, 0.707f)), 0.0f);
 	m_physicsScene->AddActor(plane2);

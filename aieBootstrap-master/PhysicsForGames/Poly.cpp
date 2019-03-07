@@ -2,9 +2,10 @@
 #include <limits>
 
 Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, const float mass,
-	const glm::vec4 & colour, const bool isKinematic, const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
+	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
+	const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
 	Rigidbody(POLY, position, velocity, 0.0f, 0.0f, mass,
-		colour, isKinematic, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
+		colour, kinematic, staticRigidbody, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
 {
 	m_vertices = vertices;
 	m_radius = 0.0f;
@@ -20,9 +21,10 @@ Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, co
 	}
 }
 Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, const float inclination, const float speed, const float mass,
-	const glm::vec4 & colour, const bool isKinematic, const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
+	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
+	const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
 	Rigidbody(POLY, position, glm::vec2(cosf(inclination) * speed, sinf(inclination) * speed), 0.0f, 0.0f, mass,
-		colour, isKinematic, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
+		colour, kinematic, staticRigidbody, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
 {
 	m_vertices = vertices;
 	m_radius = 0.0f;
@@ -38,9 +40,10 @@ Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, co
 	}
 }
 Poly::Poly(const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, const float mass,
-	const glm::vec4 & colour, const bool isKinematic, const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
+	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
+	const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
 	Rigidbody(POLY, glm::vec2(0.0f, 0.0f), velocity, 0.0f, 0.0f, mass,
-		colour, isKinematic, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
+		colour, kinematic, staticRigidbody, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
 {
 	// the average position of all the vertices
 	glm::vec2 position = glm::vec2(0.0f, 0.0f);
@@ -66,9 +69,10 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, c
 	}
 }
 Poly::Poly(const std::vector<glm::vec2>& vertices, const float inclination, const float speed, const float mass,
-	const glm::vec4 & colour, const bool isKinematic, const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
+	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
+	const float elasticity, const float linearDrag, const float angularDrag, const float 탎, const float 탃) :
 	Rigidbody(POLY, glm::vec2(0.0f, 0.0f), glm::vec2(cosf(inclination) * speed, sinf(inclination) * speed), 0.0f, 0.0f, mass,
-		colour, isKinematic, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
+		colour, kinematic, staticRigidbody, elasticity, linearDrag, angularDrag, 탎, 탃) // passes the relative information into the rigidbody constructor
 {
 	// the average position of all the vertices
 	glm::vec2 position = glm::vec2(0.0f, 0.0f);

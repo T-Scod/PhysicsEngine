@@ -19,20 +19,20 @@ class Poly : public Rigidbody
 public:
 	// takes in a position and a collection of vertices around the position (i.e. the verts will be around the origin)
 	Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, const glm::vec2& velocity, /*const float rotation, const float angularVelocity,*/ const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	// determines the velocity of the object using an incline (in radians) and a scalar (the speed)
 	Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, const float inclination, const float speed, /*const float rotation, const float angularVelocity,*/ const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	// takes in a collection of positions of vertices in the world
 	Poly(const std::vector<glm::vec2>& vertices, const glm::vec2& velocity, /*const float rotation, const float angularVelocity,*/ const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	// determines the velocity of the object using an incline (in radians) and a scalar (the speed)
 	Poly(const std::vector<glm::vec2>& vertices, const float inclination, /*const float rotation, const float angularVelocity,*/ const float speed, const float mass,
-		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool isKinematic = false, const float elasticity = 1.0f,
-		const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
+		const glm::vec4& colour = glm::vec4(1, 1, 1, 1), const bool kinematic = false, const bool staticRigidbody = false,
+		const float elasticity = 1.0f, const float linearDrag = 0.0f, const float angularDrag = 0.0f, const float 탎 = 0.0f, const float 탃 = 0.0f);
 	~Poly();
 
 	// draws lines between each of the vertices
