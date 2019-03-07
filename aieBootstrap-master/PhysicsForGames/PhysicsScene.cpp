@@ -853,6 +853,65 @@ bool PhysicsScene::Box2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const gl
 #pragma region Poly Collision
 bool PhysicsScene::Poly2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)
 {
+	// try to cast objects to poly and plane
+	Poly* poly = dynamic_cast<Poly*>(obj1);
+	Plane* plane = dynamic_cast<Plane*>(obj2);
+	// if successful then test for collision
+	if (poly != nullptr && plane != nullptr)
+	{
+		glm::vec2 normal = plane->GetNormal();
+		if (poly->GetRadius() - (glm::dot(poly->GetPosition(), normal) - plane->GetDistance()) >= 0.0f)
+		{
+			glm::vec2 projection = poly->Project(normal);
+			float overlap = projection.x - plane->GetDistance();
+			if (overlap <= 0.0f)
+			{
+				if (poly->GetKinematic() || plane->GetKinematic() || poly->GetStatic())
+				{
+					return true;
+				}
+
+				// uses the poly's velocity as the relative velocity
+				glm::vec2 relativeVelocity = poly->GetVelocity();
+
+				// poly to plane restitution
+				// determines which direction of velocity is away from the other object
+				if (glm::dot(relativeVelocity + (gravity * timeStep), normal) > 0.0f)
+				{
+					ApplyResitiution(poly, relativeVelocity + (gravity * timeStep), normal, overlap);
+				}
+				else
+				{
+					ApplyResitiution(poly, -(relativeVelocity + (gravity * timeStep)), normal, overlap);
+				}
+
+				// uses the elasticity of the poly
+				float elasticity = poly->GetElasticity();
+				// "j" is the magnitude of the force vector that needs to be applied to the objects
+				// for planes the formula is: (j = (-(1 + e)v.rel)·n) / (1 / m)
+				float j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / poly->GetMass()));
+
+				// scales the normal by the impulse magnitude to get the resolution force
+				glm::vec2 force = normal * j;
+				glm::vec2 contact = glm::vec2(0.0f, 0.0f);
+
+				for (glm::vec2 vertex : poly->GetVertices())
+				{
+					if (glm::dot(vertex + poly->GetPosition(), normal) - plane->GetDistance() == 0.0f)
+					{
+						contact = vertex + poly->GetPosition();
+						break;
+					}
+				}
+
+				// applys the friction force to the object
+				ApplyFriction(poly, force, contact, gravity, timeStep, plane->GetStaticFriction(), plane->GetKineticFriction());
+
+				return true;
+			}
+		}
+	}
+
 	return false;
 }
 bool PhysicsScene::Poly2Sphere(PhysicsObject * obj1, PhysicsObject * obj2, const glm::vec2 & gravity, const float timeStep)

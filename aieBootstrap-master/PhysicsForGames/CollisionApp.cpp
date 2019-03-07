@@ -40,11 +40,11 @@ bool CollisionApp::startup()
 	glm::vec4 red = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec4 green = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 
-	AABB* box1 = new AABB(startPos1, velocity, 5.0f, 5.0f, mass, red, false, true);
-	m_physicsScene->AddActor(box1);
+	/*AABB* box1 = new AABB(startPos1, velocity, 5.0f, 5.0f, mass, red, false, true);
+	m_physicsScene->AddActor(box1);*/
 	//box1->ApplyForce(force1);
-	AABB* box2 = new AABB(startPos2, force2, 5.0f, 5.0f, mass, green, false, false);
-	m_physicsScene->AddActor(box2);
+	/*AABB* box2 = new AABB(startPos2, force2, 5.0f, 5.0f, mass, green, false, false);
+	m_physicsScene->AddActor(box2);*/
 	//box2->ApplyForce(force2);
 	/*Sphere* ball1 = new Sphere(startPos1, velocity, 5.0f, mass, red);
 	m_physicsScene->AddActor(ball1);*/
@@ -60,6 +60,15 @@ bool CollisionApp::startup()
 	m_physicsScene->AddActor(plane3);*/
 	/*Plane* plane4 = new Plane(0.349066f, 0.0f, red, 1.0f, 1.0f);
 	m_physicsScene->AddActor(plane4);*/
+	std::vector<glm::vec2> verts;
+	verts.push_back({ -0.707f * 5.0f, 0.707f * 5.0f });
+	verts.push_back({ 0.707f * 5.0f, 0.707f * 5.0f });
+	verts.push_back({ 1.0f * 5.0f, 0.0f * 5.0f });
+	verts.push_back({ 0.707f * 5.0f, -0.707f * 5.0f });
+	verts.push_back({ -0.707f * 5.0f, -0.707f * 5.0f });
+	verts.push_back({ -1.0f * 5.0f, 0.0f * 5.0f });
+	Poly* poly1 = new Poly(startPos1, verts, velocity, mass, red);
+	m_physicsScene->AddActor(poly1);
 
 	return true;
 }

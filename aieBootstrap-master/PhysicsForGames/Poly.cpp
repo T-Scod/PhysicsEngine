@@ -10,15 +10,16 @@ Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, co
 	m_vertices = vertices;
 	m_radius = 0.0f;
 	// compares the distances of all the vertices from the position of the poly
-	for each (glm::vec2 vertex in m_vertices)
+	for (glm::vec2 vertex : m_vertices)
 	{
-		float distance = glm::distance(vertex, position + vertex);
+		float distance = glm::distance(position, position + vertex);
 		if (distance > m_radius)
 		{
 			// stores the current largest distance as the radius
 			m_radius = distance + 0.1f;
 		}
 	}
+	m_moment = 0.5f * mass * m_radius * m_radius;
 }
 Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, const float inclination, const float speed, const float mass,
 	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
@@ -29,15 +30,16 @@ Poly::Poly(const glm::vec2& position, const std::vector<glm::vec2>& vertices, co
 	m_vertices = vertices;
 	m_radius = 0.0f;
 	// compares the distances of all the vertices from the position of the poly
-	for each (glm::vec2 vertex in m_vertices)
+	for (glm::vec2 vertex : m_vertices)
 	{
-		float distance = glm::distance(vertex, position + vertex);
+		float distance = glm::distance(position, position + vertex);
 		if (distance > m_radius)
 		{
 			// stores the current largest distance as the radius
 			m_radius = distance + 0.1f;
 		}
 	}
+	m_moment = 0.5f * mass * m_radius * m_radius;
 }
 Poly::Poly(const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, const float mass,
 	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
@@ -47,7 +49,7 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, c
 {
 	// the average position of all the vertices
 	glm::vec2 position = glm::vec2(0.0f, 0.0f);
-	for each (glm::vec2 vertex in vertices)
+	for (glm::vec2 vertex : vertices)
 	{
 		position += vertex;
 	}
@@ -56,7 +58,7 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, c
 
 	m_radius = 0.0f;
 	// compares the distances of all the vertices from the position of the poly
-	for each (glm::vec2 vertex in vertices)
+	for (glm::vec2 vertex : vertices)
 	{
 		// adds the vertex to the collection as a vector relative to the position
 		m_vertices.push_back(vertex - position);
@@ -67,6 +69,7 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const glm::vec2 & velocity, c
 			m_radius = distance + 0.1f;
 		}
 	}
+	m_moment = 0.5f * mass * m_radius * m_radius;
 }
 Poly::Poly(const std::vector<glm::vec2>& vertices, const float inclination, const float speed, const float mass,
 	const glm::vec4 & colour, const bool kinematic, const bool staticRigidbody,
@@ -76,7 +79,7 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const float inclination, cons
 {
 	// the average position of all the vertices
 	glm::vec2 position = glm::vec2(0.0f, 0.0f);
-	for each (glm::vec2 vertex in vertices)
+	for (glm::vec2 vertex : vertices)
 	{
 		position += vertex;
 	}
@@ -85,7 +88,7 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const float inclination, cons
 
 	m_radius = 0.0f;
 	// compares the distances of all the vertices from the position of the poly
-	for each (glm::vec2 vertex in vertices)
+	for (glm::vec2 vertex : vertices)
 	{
 		// adds the vertex to the collection as a vector relative to the position
 		m_vertices.push_back(vertex - position);
@@ -96,6 +99,7 @@ Poly::Poly(const std::vector<glm::vec2>& vertices, const float inclination, cons
 			m_radius = distance + 0.1f;
 		}
 	}
+	m_moment = 0.5f * mass * m_radius * m_radius;
 }
 Poly::~Poly()
 {
@@ -104,42 +108,42 @@ Poly::~Poly()
 void Poly::MakeGizmo()
 {
 	/*unfilled poly*/
-	//for (int i = 0; i < m_vertices.size(); i++)
-	//{
-	//	int j = 0;
-	//	if (i + 1 < m_vertices.size())
-	//	{
-	//		j = i + 1;
-	//	}
-	//	// draws a line between the vertices
-	//	aie::Gizmos::add2DLine(m_vertices[i] + m_position, m_vertices[j] + m_position, m_colour);
-	//}
+	for (int i = 0; i < m_vertices.size(); i++)
+	{
+		int j = 0;
+		if (i + 1 < m_vertices.size())
+		{
+			j = i + 1;
+		}
+		// draws a line between the vertices
+		aie::Gizmos::add2DLine(m_vertices[i] + m_position, m_vertices[j] + m_position, m_colour);
+	}
 
 	/*filled poly*/
-	if (m_vertices.size() > 2)
-	{
-		glm::vec2 v0 = m_vertices[0];
-		glm::vec2 v1 = m_vertices[1];
-		glm::vec2 v2 = m_vertices[2];
-		for (int i = 2; i < m_vertices.size(); i++)
-		{
-			v2 = m_vertices[i];
-			aie::Gizmos::add2DTri(v0, v1, v2, m_colour);
-			v1 = v2;
-		}
-	}
+	//if (m_vertices.size() > 2)
+	//{
+	//	glm::vec2 v0 = m_vertices[0];
+	//	glm::vec2 v1 = m_vertices[1];
+	//	glm::vec2 v2 = m_vertices[2];
+	//	for (int i = 2; i < m_vertices.size(); i++)
+	//	{
+	//		v2 = m_vertices[i];
+	//		aie::Gizmos::add2DTri(v0, v1, v2, m_colour);
+	//		v1 = v2;
+	//	}
+	//}
 }
 
 // returns the min and max projection of vertices on the axis
 glm::vec2 Poly::Project(const glm::vec2 & axis) const
 {
 	// projects the first vertex onto the axis
-	float min = glm::dot(axis, m_vertices[0]);
+	float min = glm::dot(axis, m_vertices[0] + m_position);
 	float max = min;
 	// iterates through each vertex storing the projection if it is less than or greater than the current min or max
 	for (int i = 1; i < m_vertices.size(); i++)
 	{
-		float proj = glm::dot(axis, m_vertices[i]);
+		float proj = glm::dot(axis, m_vertices[i] + m_position);
 		if (proj < min)
 		{
 			min = proj;
@@ -257,7 +261,7 @@ Edge Poly::BestEdge(const glm::vec2 & normal) const
 	for (int i = 0; i < m_vertices.size(); i++)
 	{
 		// projects the vertex onto the normal
-		float projection = glm::dot(normal, m_vertices[i]);
+		float projection = glm::dot(normal, m_vertices[i] + m_position);
 		// checks if it is greater than the current maximum projection
 		if (projection > max)
 		{
@@ -269,11 +273,11 @@ Edge Poly::BestEdge(const glm::vec2 & normal) const
 	}
 
 	// gets the max vertex
-	glm::vec2 vert = m_vertices[index];
+	glm::vec2 vert = m_vertices[index] + m_position;
 	// gets the vertex to the right of the max
-	glm::vec2 vertNext = m_vertices[(index + 1 == m_vertices.size()) ? 0 : index + 1];
+	glm::vec2 vertNext = m_vertices[(index + 1 == m_vertices.size()) ? 0 : index + 1] + m_position;
 	// gets the vertex to the left of the max
-	glm::vec2 vertPrev = m_vertices[(index - 1 < 0) ? m_vertices.size() : index - 1];
+	glm::vec2 vertPrev = m_vertices[(index - 1 < 0) ? m_vertices.size() : index - 1] + m_position;
 
 	// gets the vector between the max vertex and left vertex to get the left edge
 	glm::vec2 leftEdge = vert - vertPrev;
@@ -347,12 +351,12 @@ std::vector<glm::vec2> Poly::GetAxis() const
 	std::vector<glm::vec2> axis;
 	for (int i = 0; i < m_vertices.size(); i++)
 	{
-		glm::vec2 vert1 = m_vertices[i];
+		glm::vec2 vert1 = m_vertices[i] + m_position;
 		glm::vec2 vert2;
 		// checks if it is at the end of the container and should wrap around to the start
 		if (i + 1 == m_vertices.size())
 		{
-			vert2 = m_vertices[0];
+			vert2 = m_vertices[0] + m_position;
 		}
 		else
 		{
