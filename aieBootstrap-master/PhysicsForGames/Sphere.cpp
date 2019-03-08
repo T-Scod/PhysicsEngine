@@ -26,9 +26,6 @@ void Sphere::MakeGizmo()
 {
 	// uses gizmos to draw a circle
 	aie::Gizmos::add2DCircle(m_position, m_radius, 24, m_colour);
-	// draws the rotation of the circle as a line
-	glm::vec2 end = glm::vec2(std::cos(m_rotation), std::sin(m_rotation)) * m_radius;
-	aie::Gizmos::add2DLine(m_position, m_position + end, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 }
 
 void Sphere::SetRadius(const float radius)

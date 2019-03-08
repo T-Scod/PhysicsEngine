@@ -364,7 +364,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			}
 
 			// the difference between the velocities is the relative velocity
-			glm::vec2 relativeVelocity = sphere->GetVelocity() - box->GetVelocity();
+			glm::vec2 relativeVelocity = box->GetVelocity() - sphere->GetVelocity();
 			// the collision normal
 			glm::vec2 normal = glm::vec2(0.0f, 0.0f);
 
@@ -391,11 +391,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			if (normal == glm::vec2(0.0f, 0.0f))
 			{
 				// the collision normal between the circle and the box will be perpendicular to one of the box's sides
-				normal = glm::normalize(sphere->GetPosition() - box->GetPosition());
-				// sets the smaller of the two coordinates to 0
-				(fabsf(normal.x) > fabsf(normal.y)) ? normal.y = 0.0f : normal.x = 0.0f;
-				// ensures that the larger coordinate equals 1
-				normal = glm::normalize(normal);
+				normal = glm::normalize(sphere->GetPosition() - clamp);
 			}
 
 			// the amount the circle and box overlap
@@ -436,7 +432,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			float p1 = sphere->GetMass() * glm::length(sphere->GetVelocity());
 			float p2 = box->GetMass() * glm::length(box->GetVelocity());
 			// the sum of the two momentums
-			float momentum = sphere->GetMass() + box->GetMass();
+			float momentum = p1 + p2;
 			// seperates the overlap based on the ratio of the momentums of the two objects
 			float overlap1 = overlap * (p2 / momentum);
 			float overlap2 = overlap * (p1 / momentum);
@@ -451,21 +447,21 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			if (!sphere->GetStatic() && !box->GetStatic())
 			{
 				// determines which direction of velocity is away from the other object
-				if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
 				{
-					ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), -normal, overlap1);
+					ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), normal, overlap1);
 				}
 				else
 				{
-					ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), -normal, overlap1);
+					ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), normal, overlap1);
 				}
-				if (glm::dot(box->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				if (glm::dot(box->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
 				{
-					ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), normal, overlap2);
+					ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), -normal, overlap2);
 				}
 				else
 				{
-					ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), normal, overlap2);
+					ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), -normal, overlap2);
 				}
 
 				elasticity = (box->GetElasticity() + sphere->GetElasticity()) / 2.0f;
@@ -476,13 +472,13 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			else if (!sphere->GetStatic())
 			{
 				// gives the object the full overlap amount because the other object is static
-				if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
+				if (glm::dot(sphere->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
 				{
-					ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), -normal, overlap);
+					ApplyResitiution(sphere, sphere->GetVelocity() + (gravity * timeStep), normal, overlap);
 				}
 				else
 				{
-					ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), -normal, overlap);
+					ApplyResitiution(sphere, -(sphere->GetVelocity() + (gravity * timeStep)), normal, overlap);
 				}
 
 				// uses the elasticity of the sphere
@@ -494,13 +490,13 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 			else if (!box->GetStatic())
 			{
 				// gives the object the full overlap amount because the other object is static
-				if (glm::dot(box->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
+				if (glm::dot(box->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
 				{
-					ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), normal, overlap);
+					ApplyResitiution(box, box->GetVelocity() + (gravity * timeStep), -normal, overlap);
 				}
 				else
 				{
-					ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), normal, overlap);
+					ApplyResitiution(box, -(box->GetVelocity() + (gravity * timeStep)), -normal, overlap);
 				}
 
 				// uses the elasticity of the box
@@ -664,7 +660,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 				// the collision normal between the boxes will be the vector between box1 and the clamped point
 				normal = glm::normalize(clamp - box1->GetPosition());
 				// checks if the normal is not perpendicular to one of the box's sides because a perpendicular normal is favoured in box to box resolution
-				if (normal.x != 0.0f || normal.y != 0.0f)
+				if (normal.x != 0.0f && normal.y != 0.0f)
 				{
 					// the closest point on box1 to box2
 					clamp = glm::clamp(box2->GetPosition(), box1->GetMin(), box1->GetMax());
@@ -1050,7 +1046,7 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * ((1 / poly1->GetMass()) + (1 / poly2->GetMass())));
 			}
 			// checks if only poly1 is not static
-			if (!poly1->GetStatic())
+			else if (!poly1->GetStatic())
 			{
 				// gives the object the full overlap amount because the other object is static
 				if (glm::dot(poly1->GetVelocity() + (gravity * timeStep), -normal) > 0.0f)
@@ -1068,7 +1064,7 @@ bool PhysicsScene::Poly2Poly(PhysicsObject * obj1, PhysicsObject * obj2, const g
 				j = glm::dot(-(1 + elasticity) * (relativeVelocity), normal) / glm::dot(normal, normal * (1 / poly1->GetMass()));
 			}
 			// checks if only poly2 is not static
-			if (!poly2->GetStatic())
+			else if (!poly2->GetStatic())
 			{
 				// gives the object the full overlap amount because the other object is static
 				if (glm::dot(poly2->GetVelocity() + (gravity * timeStep), normal) > 0.0f)
@@ -1177,6 +1173,9 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 
 void PhysicsScene::ApplyResitiution(Rigidbody * obj, const glm::vec2 & velocity, const glm::vec2 & normal, const float overlap)
 {
+	const float HALF_PI = acosf(0.0f);
+	const float tolerance = 0.000001f;
+
 	float theta = 0.0f;
 	// checks if the object is moving
 	if (glm::length(velocity) != 0.0f)
@@ -1184,7 +1183,12 @@ void PhysicsScene::ApplyResitiution(Rigidbody * obj, const glm::vec2 & velocity,
 		// the angle between the velocity and collision normal
 		theta = acosf(fminf(glm::dot(glm::normalize(velocity), normal), 1.0f));
 		// the amount the box needs to move perpendicular to the collision normal
-		float perpendicular = tanf(theta) * overlap;
+		float perpendicular = 0.0f;
+		// ensures that the value is not 90 or 270 degrees to the normal
+		if ((theta > HALF_PI + tolerance && theta < (HALF_PI * 3.0f) - tolerance) || theta > (HALF_PI * 3.0f) + tolerance || theta <= HALF_PI - tolerance)
+		{
+			perpendicular = tanf(theta) * overlap;
+		}
 		// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
 		glm::vec2 restitution = glm::length(glm::vec2(perpendicular, overlap)) * glm::normalize(velocity);
 		// adds the restitution to the current object's position
@@ -1193,7 +1197,7 @@ void PhysicsScene::ApplyResitiution(Rigidbody * obj, const glm::vec2 & velocity,
 	else // the object is not moving
 	{
 		// the amount the box needs to move perpendicular to the collision normal
-		float perpendicular = tanf(theta) * overlap;
+		float perpendicular = overlap;
 		// multiplies the velocity in the opposite direction by the magnitude of the vector at ("perpendicular", "overlap")
 		// because the object is stationary the normal will be used to determine restitution direction
 		glm::vec2 restitution = glm::length(glm::vec2(perpendicular, overlap)) * glm::normalize(normal);
