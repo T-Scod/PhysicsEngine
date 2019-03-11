@@ -170,7 +170,7 @@ bool PhysicsScene::Sphere2Plane(PhysicsObject * obj1, PhysicsObject * obj2, cons
 
 		// the amount the circle overlaps the plane
 		float overlap = sphere->GetRadius() - sphereToPlane;
-		// if the overlap amount is positive then a collision occured
+		// if the overlap amount is positive then a collision occurred
 		if (overlap >= 0)
 		{
 			// if either object is kinematic then there is no collision resolution
@@ -353,7 +353,7 @@ bool PhysicsScene::Sphere2Box(PhysicsObject * obj1, PhysicsObject * obj2, const 
 	{
 		// clamps the circle's position to the box's bounds, i.e. the closest point on the box relative to the circle
 		glm::vec2 clamp = glm::clamp(sphere->GetPosition(), box->GetMin(), box->GetMax());
-		// if the distance between the closest point and the circle is less than the circle's radius then a collision occured
+		// if the distance between the closest point and the circle is less than the circle's radius then a collision occurred
 		if (glm::distance(clamp, sphere->GetPosition()) < sphere->GetRadius())
 		{
 			// if either object is kinematic then there is no collision resolution
@@ -555,7 +555,7 @@ bool PhysicsScene::Box2Plane(PhysicsObject * obj1, PhysicsObject * obj2, const g
 			}
 		}
 
-		// if any of the corners intersect with the plane then a collision occured
+		// if any of the corners intersect with the plane then a collision occurred
 		if (intersections[0] || intersections[1] || intersections[2] || intersections[3])
 		{
 			// if the either object is kinematic then there is no collision resolution
@@ -642,7 +642,7 @@ bool PhysicsScene::Box2Box(PhysicsObject * obj1, PhysicsObject * obj2, const glm
 			// no collision
 			return false;
 		}
-		else // collision occured
+		else // collision occurred
 		{
 			// if either object is kinematic then there is no collision resolution
 			// if both objects are static then there will be no collision resolution because neither object will move
@@ -1148,15 +1148,6 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 		frictionForce *= (obj->GetKineticFriction() + µk) / 2.0f;
 	}
 
-	//// adds the friction force to the velocity after the collision
-	//velocity += frictionForce;
-	//// projects the velocity on the friction force to see if the force overcame the friction
-	//frictionDirection = glm::dot(frictionForce, velocity);
-	//// if the projection is negative then the force overcame the friction
-	//if (frictionDirection <= 0.0f)
-	//{
-	//	obj->ApplyForce(force + frictionForce, contact - obj->GetPosition());
-	//}
 	// checks if the magnitude of the friction force is less than or equal to the magnitude of the velocity
 	if (glm::length(frictionForce) <= glm::length(velocity))
 	{
@@ -1174,7 +1165,8 @@ void PhysicsScene::ApplyFriction(Rigidbody * obj, const glm::vec2 & force, const
 void PhysicsScene::ApplyResitiution(Rigidbody * obj, const glm::vec2 & velocity, const glm::vec2 & normal, const float overlap)
 {
 	const float HALF_PI = acosf(0.0f);
-	const float tolerance = 0.000001f;
+	// the amount either side of an angle that would result in an issue with finding tan of that angle
+	const float TOLERANCE = 0.000001f;
 
 	float theta = 0.0f;
 	// checks if the object is moving
@@ -1185,7 +1177,7 @@ void PhysicsScene::ApplyResitiution(Rigidbody * obj, const glm::vec2 & velocity,
 		// the amount the box needs to move perpendicular to the collision normal
 		float perpendicular = 0.0f;
 		// ensures that the value is not 90 or 270 degrees to the normal
-		if ((theta > HALF_PI + tolerance && theta < (HALF_PI * 3.0f) - tolerance) || theta > (HALF_PI * 3.0f) + tolerance || theta <= HALF_PI - tolerance)
+		if ((theta > HALF_PI + TOLERANCE && theta < (HALF_PI * 3.0f) - TOLERANCE) || theta > (HALF_PI * 3.0f) + TOLERANCE || theta <= HALF_PI - TOLERANCE)
 		{
 			perpendicular = tanf(theta) * overlap;
 		}
